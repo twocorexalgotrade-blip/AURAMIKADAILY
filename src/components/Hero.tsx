@@ -41,14 +41,31 @@ export default function Hero() {
     return (
         <section className="relative w-full h-[100vh] bg-brand-dark overflow-hidden flex items-center justify-center">
 
+            {/* Static fallback image — always visible until video loads */}
+            <div className="absolute inset-0 z-0">
+                <img
+                    src="/hero_first_frame.png"
+                    alt="Auramika Daily"
+                    className="w-full h-full object-cover opacity-70"
+                />
+            </div>
+
+            {/* Video overlaid on top of fallback */}
             <video
-                src="/download.mp4"
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-70"
-            />
+                poster="/hero_first_frame.png"
+                className="absolute inset-0 w-full h-full object-cover opacity-70 z-[1]"
+                onError={(e) => {
+                    // Hide video on error — static poster image shows through underneath
+                    (e.target as HTMLVideoElement).style.display = 'none';
+                }}
+            >
+                <source src="/download.mp4" type="video/mp4" />
+                <source src="/AURAMIKLY.mp4" type="video/mp4" />
+            </video>
 
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
