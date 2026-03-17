@@ -3,8 +3,18 @@ import Link from 'next/link';
 import { Plus, Edit2, Trash2, Package } from 'lucide-react';
 import Image from 'next/image';
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  quantity: number;
+  images: string[];
+  createdAt: Date;
+}
+
 export default async function AdminProducts() {
-  const products = await prisma.product.findMany({
+  const products: Product[] = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
   });
 
@@ -15,7 +25,7 @@ export default async function AdminProducts() {
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
           <p className="text-neutral-400 mt-1">Manage your storefront inventory</p>
         </div>
-        <Link 
+        <Link
           href="/admin/products/new"
           className="flex items-center gap-2 px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
         >
@@ -43,14 +53,14 @@ export default async function AdminProducts() {
                 </td>
               </tr>
             ) : (
-              products.map((product) => (
+              products.map((product: Product) => (
                 <tr key={product.id} className="hover:bg-neutral-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       {product.images.length > 0 ? (
                         <div className="w-12 h-12 relative rounded-md overflow-hidden bg-neutral-800 flex-shrink-0">
-                          <Image 
-                            src={product.images[0]} 
+                          <Image
+                            src={product.images[0]}
                             alt={product.name}
                             fill
                             className="object-cover"
@@ -69,11 +79,15 @@ export default async function AdminProducts() {
                   </td>
                   <td className="px-6 py-4 font-medium">${product.price.toFixed(2)}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      product.quantity > 10 ? 'bg-emerald-500/10 text-emerald-400' : 
-                      product.quantity > 0 ? 'bg-amber-500/10 text-amber-400' : 
-                      'bg-red-500/10 text-red-400'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        product.quantity > 10
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : product.quantity > 0
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-red-500/10 text-red-400'
+                      }`}
+                    >
                       {product.quantity} in stock
                     </span>
                   </td>
