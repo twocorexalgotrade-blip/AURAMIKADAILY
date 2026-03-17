@@ -14,13 +14,42 @@ model Product {
   name          String
   description   String
   price         Float
-  originalPrice Float?   // for showing "was" price and discount %
+  originalPrice Float?
   quantity      Int
   category      String   @default("All")
-  badge         String?  // e.g. "New", "Bestseller", "Sale"
-  features      String[] // bullet points shown on PDP
-  images        String[] // Array of Cloudinary URLs
-  videos        String[] // Array of Cloudinary URLs
+  badge         String?
+  features      String[]
+  images        String[]
+  videos        String[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Order {
+  id                String      @id @default(uuid())
+  cashfreeOrderId   String      @unique
+  status            String      @default("PENDING") // PENDING | PAID | FAILED | SHIPPED | REFUNDED
+  customerName      String
+  customerEmail     String
+  customerPhone     String
+  address           String
+  city              String
+  state             String
+  pincode           String
+  subtotal          Float
+  deliveryFee       Float
+  total             Float
+  items             OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String @id @default(uuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName String
+  price       Float
+  quantity    Int
+  image       String
 }

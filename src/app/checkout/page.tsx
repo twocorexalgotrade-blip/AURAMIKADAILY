@@ -6,16 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ShieldCheck, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
-
-declare global {
-    interface Window {
-        Cashfree?: {
-            init: (config: { mode: string }) => {
-                open: (options: { orderToken: string; onSuccess: (data: unknown) => void; onFailure: (data: unknown) => void; onDismiss: () => void }) => void;
-            };
-        };
-    }
-}
+import { load } from "@cashfreepayments/cashfree-js";
 
 const STATES = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'West Bengal', 'Telangana', 'Kerala'];
 
@@ -29,13 +20,15 @@ export default function CheckoutPage() {
     const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', city: '', state: 'Maharashtra', pincode: '' });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [payError, setPayError] = useState('');
 
+    // Preload Cashfree SDK
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [cashfree, setCashfree] = useState<any>(null);
     useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://sdk.cashfree.com/js/ui/2.0.0/cashfree.sandbox.js';
-        script.async = true;
-        document.head.appendChild(script);
-        return () => { document.head.removeChild(script); };
+        load({ mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV as 'production' | 'sandbox') || 'sandbox' })
+            .then(cf => setCashfree(cf))
+            .catch(console.error);
     }, []);
 
     const validate = () => {
@@ -54,22 +47,66 @@ export default function CheckoutPage() {
         if (validate()) setStep('payment');
     };
 
-    const handleCashfreePayment = () => {
+    const handlePayment = async () => {
         setIsLoading(true);
-        // In production, you call your backend → Cashfree CREATE ORDER API
-        // The backend returns an order_token which you pass to Cashfree SDK
-        const mockOrderToken = 'demo_token_' + Date.now();
-        setTimeout(() => {
+        setPayError('');
+        try {
+            // 1. Create order on our backend
+            const res = await fetch('/api/orders/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer: form,
+                    cart: cart.map(item => ({
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.image,
+                    })),
+                    subtotal,
+                    deliveryFee,
+                    total,
+                }),
+            });
+
+            if (!res.ok) throw new Error('Could not create order');
+            const { orderId, paymentSessionId } = await res.json();
+
+            // 2. Launch Cashfree payment modal
+            const checkoutOptions = {
+                paymentSessionId,
+                redirectTarget: '_modal',
+            };
+
+            cashfree.checkout(checkoutOptions).then(async (result: { error?: { message: string }; redirect?: boolean; paymentDetails?: unknown }) => {
+                if (result?.error) {
+                    setPayError(result.error.message || 'Payment failed. Please try again.');
+                    setIsLoading(false);
+                    return;
+                }
+                // 3. Verify payment
+                const verifyRes = await fetch('/api/orders/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId }),
+                });
+                const { status } = await verifyRes.json();
+
+                clearCart();
+                if (status === 'PAID') {
+                    router.push(`/order-success?order_id=${orderId}`);
+                } else {
+                    setPayError('Payment could not be confirmed. Please contact support with Order ID: ' + orderId);
+                    setIsLoading(false);
+                }
+            });
+        } catch (err) {
+            setPayError(err instanceof Error ? err.message : 'Something went wrong');
             setIsLoading(false);
-            // For demo — open success directly
-            // In production: const cf = window.Cashfree!.init({ mode: "sandbox" });
-            // cf.open({ orderToken: mockOrderToken, onSuccess: () => router.push('/order-success'), ... });
-            router.push('/order-success');
-            clearCart();
-        }, 1500);
+        }
     };
 
-    const Field = ({ label, id, type = 'text', ...props }: { label: string; id: string; type?: string;[k: string]: unknown }) => (
+    const Field = ({ label, id, type = 'text', ...props }: { label: string; id: string; type?: string; [k: string]: unknown }) => (
         <div>
             <label className="block font-outfit text-xs tracking-widest uppercase text-brand-dark/50 mb-2">{label}</label>
             <input
@@ -105,7 +142,6 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    {/* Form Area */}
                     <div className="lg:col-span-2">
                         {step === 'address' && (
                             <div className="space-y-6">
@@ -142,20 +178,29 @@ export default function CheckoutPage() {
                                     <p className="font-outfit text-sm text-brand-dark/60">{form.phone} · {form.email}</p>
                                 </div>
 
+                                {payError && (
+                                    <div className="bg-red-50 border border-red-200 text-red-600 font-outfit text-sm p-4 mb-6">
+                                        {payError}
+                                    </div>
+                                )}
+
                                 <div className="border border-brand-dark/10 p-6 mb-8 bg-white">
                                     <h3 className="font-playfair text-xl text-brand-dark mb-4">Pay Securely via Cashfree</h3>
                                     <p className="font-outfit text-sm text-brand-dark/60 mb-6 leading-relaxed">
-                                        You will be redirected to Cashfree's secure payment page. Supports UPI, Credit/Debit Cards, Net Banking, Wallets & EMI.
+                                        Supports UPI, Credit/Debit Cards, Net Banking, Wallets & EMI.
                                     </p>
                                     <div className="flex gap-4 mb-6 opacity-60 grayscale">
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" className="h-5 object-contain" />
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/MasterCard_Logo.svg" alt="Mastercard" className="h-6 object-contain" />
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-5 object-contain" />
                                     </div>
-                                    <button onClick={handleCashfreePayment} disabled={isLoading}
-                                        className="w-full bg-brand-dark text-brand-light py-5 font-outfit font-bold tracking-widest uppercase hover:bg-brand-accent transition-colors flex items-center justify-center gap-3 disabled:opacity-70">
+                                    <button
+                                        onClick={handlePayment}
+                                        disabled={isLoading || !cashfree}
+                                        className="w-full bg-brand-dark text-brand-light py-5 font-outfit font-bold tracking-widest uppercase hover:bg-brand-accent transition-colors flex items-center justify-center gap-3 disabled:opacity-70"
+                                    >
                                         <Lock className="w-4 h-4" />
-                                        {isLoading ? 'Connecting to Cashfree...' : `Pay ₹ ${total.toLocaleString('en-IN')} Securely`}
+                                        {isLoading ? 'Processing...' : !cashfree ? 'Loading Payment...' : `Pay ₹ ${total.toLocaleString('en-IN')} Securely`}
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2 text-brand-dark/40 justify-center">
