@@ -10,17 +10,17 @@ export async function GET() {
 
     // Map DB products to match the frontend Product type
     const products = dbProducts.map((p, i) => ({
-      id: 10000 + i, // offset to avoid collision with hardcoded ids (1-8)
+      id: 10000 + i,
       slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
       name: p.name,
       price: p.price,
-      originalPrice: p.price,
-      category: 'All',
+      originalPrice: p.originalPrice ?? p.price,
+      category: p.category || 'All',
       image: p.images[0] || '/product_chain.png',
       images: p.images.length > 0 ? p.images : ['/product_chain.png'],
-      badge: 'New' as string | null,
+      badge: p.badge ?? null,
       description: p.description,
-      features: [] as string[],
+      features: p.features ?? [],
       inStock: p.quantity > 0,
     }));
 
@@ -35,7 +35,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, price, quantity, images, videos } = body;
+    const { name, description, price, originalPrice, quantity, category, badge, features, images, videos } = body;
 
     if (!name || !price || quantity === undefined) {
       return NextResponse.json({ error: 'Name, price, and quantity are required' }, { status: 400 });
@@ -46,7 +46,11 @@ export async function POST(request: NextRequest) {
         name,
         description: description || '',
         price: parseFloat(price),
+        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
         quantity: parseInt(quantity, 10),
+        category: category || 'All',
+        badge: badge || null,
+        features: features || [],
         images: images || [],
         videos: videos || [],
       },

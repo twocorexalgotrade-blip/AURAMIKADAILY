@@ -3,8 +3,8 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { allProducts } from "@/data/products";
-import { useCart } from "@/context/CartContext";
-import { useState } from "react";
+import { useCart, Product } from "@/context/CartContext";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ShoppingBag, Heart, Truck, ShieldCheck, Star, Minus, Plus } from "lucide-react";
 import Link from "next/link";
@@ -19,8 +19,18 @@ const reviews = [
 export default function PDPPage({ params }: { params: { slug: string } }) {
     const router = useRouter();
     const { addToCart } = useCart();
-    const product = allProducts.find(p => p.slug === params.slug) || allProducts[0];
-    const related = allProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3);
+    const [dbProducts, setDbProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => { if (Array.isArray(data)) setDbProducts(data); })
+            .catch(() => {});
+    }, []);
+
+    const allCombined = [...allProducts, ...dbProducts];
+    const product = allCombined.find(p => p.slug === params.slug) || allProducts[0];
+    const related = allCombined.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3);
 
     const [activeImage, setActiveImage] = useState(0);
     const [qty, setQty] = useState(1);

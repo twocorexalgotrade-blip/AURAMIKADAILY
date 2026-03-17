@@ -10,13 +10,17 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  quantity    Int
-  images      String[] // Array of Cloudinary URLs
-  videos      String[] // Array of Cloudinary URLs
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  price         Float
+  originalPrice Float?   // for showing "was" price and discount %
+  quantity      Int
+  category      String   @default("All")
+  badge         String?  // e.g. "New", "Bestseller", "Sale"
+  features      String[] // bullet points shown on PDP
+  images        String[] // Array of Cloudinary URLs
+  videos        String[] // Array of Cloudinary URLs
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
