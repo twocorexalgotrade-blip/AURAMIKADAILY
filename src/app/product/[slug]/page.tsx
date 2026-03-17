@@ -30,6 +30,7 @@ export default function PDPPage({ params }: { params: Promise<{ slug: string }> 
     const [product, setProduct] = useState<Product | null>(hardcodedMatch || null);
     const [allCombined, setAllCombined] = useState<Product[]>([...allProducts]);
     const [loading, setLoading] = useState(!hardcodedMatch);
+    const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
         fetch('/api/products')
@@ -40,12 +41,18 @@ export default function PDPPage({ params }: { params: Promise<{ slug: string }> 
                     setAllCombined(combined);
                     if (!hardcodedMatch) {
                         const found = data.find(p => p.slug === slug);
-                        setProduct(found || allProducts[0]);
+                        if (found) {
+                            setProduct(found);
+                        } else {
+                            setNotFound(true);
+                        }
                     }
+                } else {
+                     if (!hardcodedMatch) setNotFound(true);
                 }
             })
             .catch(() => {
-                if (!hardcodedMatch) setProduct(allProducts[0]);
+                if (!hardcodedMatch) setNotFound(true);
             })
             .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +93,7 @@ export default function PDPPage({ params }: { params: Promise<{ slug: string }> 
     };
 
     // Show a loading skeleton while a DB-only product is being fetched
-    if (loading || !product) {
+    if (loading) {
         return (
             <div className="min-h-screen bg-brand-light">
                 <Navigation />
@@ -95,6 +102,24 @@ export default function PDPPage({ params }: { params: Promise<{ slug: string }> 
                         <div className="w-12 h-12 border-2 border-brand-dark/20 border-t-brand-dark rounded-full animate-spin" />
                         <p className="font-outfit text-sm">Loading product...</p>
                     </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (notFound || !product) {
+        return (
+            <div className="min-h-screen bg-brand-light">
+                <Navigation />
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-28 pb-16 flex flex-col items-center justify-center min-h-[60vh] text-center">
+                    <h1 className="font-playfair text-4xl text-brand-dark mb-4">Product Not Found</h1>
+                    <p className="font-outfit text-brand-dark/60 mb-8 max-w-md mx-auto">
+                        We couldn't find the product you're looking for. It may have been removed or the link might be broken.
+                    </p>
+                    <Link href="/shop" className="bg-brand-dark text-brand-light px-8 py-3 font-outfit uppercase tracking-widest text-sm hover:bg-brand-accent transition-colors">
+                        Return to Shop
+                    </Link>
                 </div>
                 <Footer />
             </div>
