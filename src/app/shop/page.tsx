@@ -3,10 +3,10 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { allProducts } from "@/data/products";
-import { useCart } from "@/context/CartContext";
+import { useCart, Product } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingBag, Heart, SlidersHorizontal, X } from "lucide-react";
 
 const categories = ['All', 'Chains', 'Rings', 'Earrings', 'Bracelets'];
@@ -19,8 +19,18 @@ export default function ShopPage() {
     const [wishlist, setWishlist] = useState<number[]>([]);
     const [filterOpen, setFilterOpen] = useState(false);
     const [addedId, setAddedId] = useState<number | null>(null);
+    const [dbProducts, setDbProducts] = useState<Product[]>([]);
 
-    const filtered = allProducts
+    useEffect(() => {
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => { if (Array.isArray(data)) setDbProducts(data); })
+            .catch(() => {}); // silently fail — hardcoded products still show
+    }, []);
+
+    const allCombined = [...allProducts, ...dbProducts];
+
+    const filtered = allCombined
         .filter(p => activeCategory === 'All' || p.category === activeCategory)
         .sort((a, b) => {
             if (sortBy === 'Price: Low to High') return a.price - b.price;
@@ -30,7 +40,7 @@ export default function ShopPage() {
 
     const toggleWishlist = (id: number) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
-    const handleAdd = (product: typeof allProducts[0]) => {
+    const handleAdd = (product: Product) => {
         addToCart(product);
         setAddedId(product.id);
         setTimeout(() => setAddedId(null), 1500);
