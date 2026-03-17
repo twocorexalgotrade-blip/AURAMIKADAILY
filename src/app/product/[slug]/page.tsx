@@ -4,11 +4,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { allProducts } from "@/data/products";
 import { useCart, Product } from "@/context/CartContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ShoppingBag, Heart, Truck, ShieldCheck, Star, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 
 const reviews = [
     { name: "Priya M.", rating: 5, date: "Feb 2026", text: "The quality is absolutely stunning for the price. Wearing it daily and it hasn't tarnished at all!" },
@@ -16,16 +17,19 @@ const reviews = [
     { name: "Riya K.", rating: 4, date: "Dec 2025", text: "Very pretty and feels premium. Delivery was fast too. Would recommend to everyone!" },
 ];
 
-export default function PDPPage({ params }: { params: { slug: string } }) {
+export default function PDPPage({ params }: { params: Promise<{ slug: string }> }) {
     const router = useRouter();
     const { addToCart } = useCart();
 
+    // Unwrap the params Promise (required in Next.js 15+)
+    const { slug } = use(params);
+
     // Immediately resolve from hardcoded list (instant, no flash)
-    const hardcodedMatch = allProducts.find(p => p.slug === params.slug);
+    const hardcodedMatch = allProducts.find(p => p.slug === slug);
 
     const [product, setProduct] = useState<Product | null>(hardcodedMatch || null);
     const [allCombined, setAllCombined] = useState<Product[]>([...allProducts]);
-    const [loading, setLoading] = useState(!hardcodedMatch); // only show loading if slug not found locally
+    const [loading, setLoading] = useState(!hardcodedMatch);
 
     useEffect(() => {
         fetch('/api/products')
@@ -34,9 +38,8 @@ export default function PDPPage({ params }: { params: { slug: string } }) {
                 if (Array.isArray(data)) {
                     const combined = [...allProducts, ...data];
                     setAllCombined(combined);
-                    // Only update product if we didn't already find it in the hardcoded list
                     if (!hardcodedMatch) {
-                        const found = data.find(p => p.slug === params.slug);
+                        const found = data.find(p => p.slug === slug);
                         setProduct(found || allProducts[0]);
                     }
                 }
@@ -45,7 +48,9 @@ export default function PDPPage({ params }: { params: { slug: string } }) {
                 if (!hardcodedMatch) setProduct(allProducts[0]);
             })
             .finally(() => setLoading(false));
-    }, [params.slug, hardcodedMatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [slug]);
+
 
     const related = product
         ? allCombined.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3)
