@@ -10,8 +10,8 @@ export default async function AdminDashboard() {
     select: { price: true, quantity: true },
   });
 
-  const totalValue = products.reduce((acc: number, curr) => acc + (curr.price * curr.quantity), 0);
-  const totalQuantity = products.reduce((acc: number, curr) => acc + curr.quantity, 0);
+  const totalValue = products.reduce((acc: number, curr: { price: number; quantity: number }) => acc + (curr.price * curr.quantity), 0);
+  const totalQuantity = products.reduce((acc: number, curr: { quantity: number }) => acc + curr.quantity, 0);
 
   return (
     <div className="space-y-6">
