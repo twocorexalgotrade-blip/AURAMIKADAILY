@@ -52,10 +52,24 @@ export default function PDPPage({ params }: { params: Promise<{ slug: string }> 
     }, [slug]);
 
 
-    const related = product
+    let related = product
         ? allCombined.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3)
         : [];
 
+    // If it's a new product (either badge 'New' or dynamically added and not hardcoded)
+    if (product && product.slug !== 'classic-rope-chain') {
+        const isNew = product.badge === 'New' || !allProducts.find(p => p.slug === product.slug);
+        
+        if (isNew) {
+            const ropeChain = allCombined.find(p => p.slug === 'classic-rope-chain');
+            if (ropeChain && !related.find(p => p.slug === 'classic-rope-chain')) {
+                if (related.length >= 3) {
+                    related.pop(); // Make room if we already have 3
+                }
+                related.push(ropeChain);
+            }
+        }
+    }
     const [activeImage, setActiveImage] = useState(0);
     const [qty, setQty] = useState(1);
     const [pincode, setPincode] = useState('');
