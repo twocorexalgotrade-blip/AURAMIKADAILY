@@ -19,18 +19,37 @@ const reviews = [
 export default function PDPPage({ params }: { params: { slug: string } }) {
     const router = useRouter();
     const { addToCart } = useCart();
-    const [dbProducts, setDbProducts] = useState<Product[]>([]);
+
+    // Immediately resolve from hardcoded list (instant, no flash)
+    const hardcodedMatch = allProducts.find(p => p.slug === params.slug);
+
+    const [product, setProduct] = useState<Product | null>(hardcodedMatch || null);
+    const [allCombined, setAllCombined] = useState<Product[]>([...allProducts]);
+    const [loading, setLoading] = useState(!hardcodedMatch); // only show loading if slug not found locally
 
     useEffect(() => {
         fetch('/api/products')
             .then(res => res.json())
-            .then(data => { if (Array.isArray(data)) setDbProducts(data); })
-            .catch(() => {});
-    }, []);
+            .then((data: Product[]) => {
+                if (Array.isArray(data)) {
+                    const combined = [...allProducts, ...data];
+                    setAllCombined(combined);
+                    // Only update product if we didn't already find it in the hardcoded list
+                    if (!hardcodedMatch) {
+                        const found = data.find(p => p.slug === params.slug);
+                        setProduct(found || allProducts[0]);
+                    }
+                }
+            })
+            .catch(() => {
+                if (!hardcodedMatch) setProduct(allProducts[0]);
+            })
+            .finally(() => setLoading(false));
+    }, [params.slug, hardcodedMatch]);
 
-    const allCombined = [...allProducts, ...dbProducts];
-    const product = allCombined.find(p => p.slug === params.slug) || allProducts[0];
-    const related = allCombined.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3);
+    const related = product
+        ? allCombined.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3)
+        : [];
 
     const [activeImage, setActiveImage] = useState(0);
     const [qty, setQty] = useState(1);
@@ -46,6 +65,22 @@ export default function PDPPage({ params }: { params: { slug: string } }) {
             setDeliveryMsg('Please enter a valid 6-digit pincode.');
         }
     };
+
+    // Show a loading skeleton while a DB-only product is being fetched
+    if (loading || !product) {
+        return (
+            <div className="min-h-screen bg-brand-light">
+                <Navigation />
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-28 pb-16 flex items-center justify-center min-h-[60vh]">
+                    <div className="flex flex-col items-center gap-4 text-brand-dark/40">
+                        <div className="w-12 h-12 border-2 border-brand-dark/20 border-t-brand-dark rounded-full animate-spin" />
+                        <p className="font-outfit text-sm">Loading product...</p>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
 
     const handleAdd = () => {
         addToCart(product, qty);
