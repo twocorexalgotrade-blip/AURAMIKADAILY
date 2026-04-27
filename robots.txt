@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://swarna-setu.com/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
+
+# Allow CSS and JS
+Allow: /styles/
+Allow: /js/
+Allow: /assets/

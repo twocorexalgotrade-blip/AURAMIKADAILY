@@ -1,0 +1,24 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.in.auramika.app"],
+        "components": [
+          { "/": "/products*", "comment": "Open product catalogue" },
+          { "/": "/product-detail*", "comment": "Open a specific product" },
+          { "/": "/shops*", "comment": "Open jeweller list" },
+          { "/": "/shop-detail*", "comment": "Open a jeweller" },
+          { "/": "/custom-order*", "comment": "Open bespoke flow" },
+          { "/": "/face_ar*", "comment": "Open AR try-on" },
+          { "/": "/cart*", "comment": "Open cart" },
+          { "/": "/wishlist*", "comment": "Open wishlist" },
+          { "/": "/profile*", "comment": "Open profile" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.in.auramika.app"]
+  }
+}

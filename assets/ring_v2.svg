@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="gold-radial" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="60%" stop-color="#FDB931" />
+      <stop offset="80%" stop-color="#F1DCA7" />
+      <stop offset="100%" stop-color="#BF953F" />
+    </radialGradient>
+    <filter id="glow-top">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Main Band: Circle with gradient stroke -->
+  <circle cx="256" cy="256" r="160" stroke="url(#gold-radial)" stroke-width="45" fill="none" filter="url(#glow-top)" />
+  <circle cx="256" cy="256" r="160" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none" />
+  
+  <!-- Inner shadow -->
+  <circle cx="256" cy="256" r="139" stroke="rgba(0,0,0,0.3)" stroke-width="3" fill="none" />
+
+  <!-- Prongs/Setting -->
+  <path d="M226 80 L236 60 L276 60 L286 80" stroke="#E5E4E2" stroke-width="6" fill="none"/>
+  
+  <!-- Diamond (Top View - Hexagonal/Round brilliance) -->
+  <g transform="translate(256, 60)">
+    <!-- Base -->
+    <circle cx="0" cy="0" r="40" fill="white" opacity="0.9" />
+    <!-- Facets -->
+    <path d="M-40 0 L0 -40 L40 0 L0 40 Z" fill="#E0F7FA" opacity="0.5" />
+    <path d="M-28 -28 L28 28 M-28 28 L28 -28" stroke="#B2EBF2" stroke-width="1.5" />
+    <!-- Center Table -->
+    <circle cx="0" cy="0" r="18" fill="white" opacity="0.8" />
+    <!-- Sparkles -->
+    <path d="M-50 0 L50 0 M0 -50 L0 50" stroke="white" stroke-width="2" opacity="0.8" />
+  </g>
+</svg>

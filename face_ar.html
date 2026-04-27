@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AR Studio — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+  <style>
+    .au-ar-page { padding-top: 96px; }
+  </style>
+</head>
+<body class="auramika-body" data-page="ar">
+  <main class="au-ar-page">
+    <section class="au-ar-stage">
+      <div class="au-ar-stage__phone">
+        <div class="scrn">
+          <img id="arImg" src="assets/images/gold_ring.jpg" alt="Try-on">
+          <div class="au-ar__phone__scan"></div>
+          <div class="au-ar__phone__overlay" style="bottom: 24px; left: 24px; right: 24px;">
+            <div class="lab" style="color: var(--current-aura, #E5BB55);">Now Trying</div>
+            <h5 style="font-family: var(--auramika-font-display); margin: 6px 0 8px; font-weight:500;">Saanvi · Solitaire</h5>
+            <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8;"><span>Pt950 · VVS1</span><span>₹2,10,000</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="au-ar-stage__copy">
+        <span class="au-eyebrow" style="color: var(--current-aura, #E5BB55);">Cinematic AR · iOS &amp; Android</span>
+        <h1>Try the piece on. <em>Right now.</em></h1>
+        <p>Hold your phone to your face. Watch the piece sit on your skin in real time, lit by your room's light. Every solitaire renders in its true cut. Every gold tone matches its real karat.</p>
+
+        <div class="au-ar-stage__steps">
+          <div class="au-ar-stage__step"><span class="n">1</span><div><h4>Allow camera</h4><p>One-time, runs locally — no images leave your phone.</p></div></div>
+          <div class="au-ar-stage__step"><span class="n">2</span><div><h4>Pick a piece</h4><p>Tap any of our pieces from the strip below.</p></div></div>
+          <div class="au-ar-stage__step"><span class="n">3</span><div><h4>Save the cinemagraph</h4><p>Share to anyone before you decide. Lifetime free.</p></div></div>
+        </div>
+
+        <button class="au-ar-stage__cta" data-cursor="Start" id="arStart">
+          Allow Camera &amp; Begin <span>→</span>
+        </button>
+
+        <div style="margin-top:36px; display:grid; grid-template-columns: repeat(5, 1fr); gap:10px;">
+          <button class="au-pd__thumb" style="aspect-ratio:1;" data-img="assets/images/gold_ring.jpg" data-cursor="Try"><img src="assets/images/gold_ring.jpg" alt=""></button>
+          <button class="au-pd__thumb" style="aspect-ratio:1;" data-img="assets/images/Pendant1.jpg" data-cursor="Try"><img src="assets/images/Pendant1.jpg" alt=""></button>
+          <button class="au-pd__thumb" style="aspect-ratio:1;" data-img="assets/images/Pendant1.4.jpg" data-cursor="Try"><img src="assets/images/Pendant1.4.jpg" alt=""></button>
+          <button class="au-pd__thumb" style="aspect-ratio:1;" data-img="assets/images/earring1.jpg" data-cursor="Try"><img src="assets/images/earring1.jpg" alt=""></button>
+          <button class="au-pd__thumb" style="aspect-ratio:1;" data-img="assets/images/Maang Tikka1.jpg" data-cursor="Try"><img src="assets/images/Maang Tikka1.jpg" alt=""></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.au-pd__thumb[data-img]').forEach(b => {
+        b.addEventListener('click', () => {
+          document.getElementById('arImg').src = b.dataset.img;
+          document.querySelectorAll('.au-pd__thumb').forEach(x => x.classList.remove('is-active'));
+          b.classList.add('is-active');
+          window.AURA?.toast('Now trying ✓');
+        });
+      });
+      document.getElementById('arStart').addEventListener('click', async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+          const v = document.createElement('video');
+          v.autoplay = true; v.playsInline = true; v.muted = true;
+          v.srcObject = stream;
+          Object.assign(v.style, { width:'100%', height:'100%', objectFit:'cover' });
+          const img = document.getElementById('arImg');
+          img.replaceWith(v); v.id = 'arImg';
+          window.AURA?.toast('Camera ready · move your face into frame');
+        } catch (e) {
+          window.AURA?.toast('Camera blocked — open in Safari/Chrome with permissions');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piece — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="products">
+  <main class="au-page">
+    <header class="au-page-head" style="padding-bottom:0">
+      <div class="au-page-head__crumbs"><a href="index.html">House</a><span>·</span><a href="products.html">Apothecary</a><span>·</span><span id="crName">Piece</span></div>
+    </header>
+
+    <section class="au-pd">
+      <div class="au-pd__gallery">
+        <div class="au-pd__hero has-loupe" id="pdHero" data-cursor="Look" data-karat="22k · BIS">
+          <img id="pdHeroImg" src="assets/images/gold_ring.jpg" alt="" />
+        </div>
+        <div class="au-pd__thumbs" id="pdThumbs"></div>
+      </div>
+
+      <aside class="au-pd__info">
+        <div class="au-pd__house">Auramika · Atelier Mumbai</div>
+        <h1 class="au-pd__name" id="pdName">The Aanya</h1>
+        <p class="au-pd__sub" id="pdSub">A solitaire chosen the way one chooses a name. Cut by hand at our Mumbai atelier, set in 22k gold, finished with a single VVS1 brilliant.</p>
+
+        <div class="au-pd__price">
+          <span class="now" id="pdPrice">₹1,84,000</span>
+          <span class="gold-band" id="pdKarat">22k · BIS</span>
+        </div>
+        <div class="au-pd__bullion">Bullion value at today's rate · <span id="pdBullion">₹37,357</span></div>
+
+        <div class="au-pd__specs">
+          <div class="au-pd__spec"><div class="k">Metal</div><div class="v" id="pdMetal">22k Yellow Gold</div></div>
+          <div class="au-pd__spec"><div class="k">Stone</div><div class="v">VVS1 Brilliant</div></div>
+          <div class="au-pd__spec"><div class="k">Weight</div><div class="v" id="pdWeight">5.2 g</div></div>
+          <div class="au-pd__spec"><div class="k">Hallmark</div><div class="v">BIS 6-Digit</div></div>
+          <div class="au-pd__spec"><div class="k">Make Time</div><div class="v">12 Days</div></div>
+          <div class="au-pd__spec"><div class="k">Buyback</div><div class="v">Lifetime, 100%</div></div>
+        </div>
+
+        <div class="au-pd__cta-row">
+          <button class="au-btn-solid" id="pdAdd" data-cursor="Add"><span>Add to Apothecary</span><span>→</span></button>
+          <a class="au-btn-line" href="face_ar.html" data-cursor="Try AR">Try in AR</a>
+          <button class="au-btn-line" id="pdHeart" data-cursor="Save">♡  Wishlist</button>
+        </div>
+
+        <div style="margin-top:32px; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color: rgba(11,10,8,0.55); font-weight:600;">
+          Free shipping · Insurance included · Returns within 14 days
+        </div>
+      </aside>
+    </section>
+
+    <section class="au-page-foot-cta">
+      <h2>This piece in <em>your aura</em>?</h2>
+      <a href="index.html#mirror" data-cursor="Mirror">Mirror My Aura →</a>
+    </section>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      const q = new URLSearchParams(location.search);
+      const name  = q.get('name')  || 'The Aanya';
+      const price = parseInt(q.get('price') || '184000', 10);
+      const img   = q.get('img')   || 'assets/images/gold_ring.jpg';
+      const karat = q.get('karat') || '22k · 5.2g';
+      const meta  = q.get('meta')  || 'Solitaire · 22k';
+
+      document.getElementById('pdName').textContent = name;
+      document.getElementById('pdPrice').textContent = '₹' + price.toLocaleString('en-IN');
+      document.getElementById('pdKarat').textContent = karat;
+      document.getElementById('pdHeroImg').src = img;
+      document.getElementById('pdHero').dataset.karat = karat;
+      document.getElementById('crName').textContent = name;
+      document.title = `${name} — Auramika`;
+
+      // Build thumbs (re-use related images)
+      const all = [
+        'assets/images/gold_ring.jpg','assets/images/Pendant1.jpg','assets/images/Pendant1.2.jpg',
+        'assets/images/Pendant1.3.jpg','assets/images/Pendant1.4.jpg','assets/images/Pendant1.5.jpg',
+      ];
+      const thumbs = [img, ...all.filter(x => x !== img).slice(0, 3)];
+      const tEl = document.getElementById('pdThumbs');
+      thumbs.forEach((t, i) => {
+        const b = document.createElement('button');
+        b.className = 'au-pd__thumb' + (i === 0 ? ' is-active' : '');
+        b.dataset.cursor = 'View';
+        b.innerHTML = `<img src="${t}" alt="" loading="lazy">`;
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.au-pd__thumb').forEach(x => x.classList.remove('is-active'));
+          b.classList.add('is-active');
+          document.getElementById('pdHeroImg').src = t;
+        });
+        tEl.appendChild(b);
+      });
+
+      // Add to cart
+      document.getElementById('pdAdd').addEventListener('click', () => {
+        window.AURA?.addToCart({ name, price, img, meta, karat });
+        window.AURA?.flyTo(document.getElementById('pdHeroImg'), document.getElementById('auKarat'));
+      });
+      document.getElementById('pdHeart').addEventListener('click', (e) => {
+        e.target.closest('button').classList.toggle('is-active');
+        window.AURA?.toast('Saved to wishlist');
+      });
+
+      // Bullion estimation (50% gold value heuristic)
+      document.getElementById('pdBullion').textContent = '₹' + Math.round(price * 0.55).toLocaleString('en-IN');
+    });
+  </script>
+</body>
+</html>

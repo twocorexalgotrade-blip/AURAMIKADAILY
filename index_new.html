@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarna Setu | Luxury Jewellery</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Discover exquisite handcrafted jewelry from India's finest jewellers. Shop gold, diamond, silver, and platinum jewelry with AR try-on.">
+    <meta name="keywords" content="jewelry, jewellery, gold, diamond, silver, platinum, indian jewelry, luxury jewelry">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kaisei+HarunoUmi:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles/variables.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/pages/home.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <a href="index.html" class="header-logo">
+                <img src="assets/images/logo.png" alt="Swarna Setu Logo" id="headerLogo">
+                <span>Swarna Setu</span>
+            </a>
+
+            <nav class="header-nav" id="headerNav">
+                <a href="index.html" class="header-nav-link active">Home</a>
+                <a href="products.html" class="header-nav-link">Collections</a>
+                <a href="shops.html" class="header-nav-link">Jewellers</a>
+                <a href="custom-order.html" class="header-nav-link">Custom Design</a>
+                <a href="#" class="header-nav-link" id="goldRateLink">
+                    <span class="live-indicator"></span>
+                    Gold Rate
+                </a>
+            </nav>
+
+            <div class="header-actions">
+                <button class="header-icon-btn" id="searchBtn" aria-label="Search">
+                    <span>🔍</span>
+                </button>
+                <a href="wishlist.html" class="header-icon-btn" aria-label="Wishlist">
+                    <span>❤️</span>
+                    <span class="badge-count" id="wishlistCount">0</span>
+                </a>
+                <a href="cart.html" class="header-icon-btn" aria-label="Cart">
+                    <span>🛒</span>
+                    <span class="badge-count" id="cartCount">0</span>
+                </a>
+                <a href="profile.html" class="header-icon-btn" aria-label="Profile">
+                    <span>👤</span>
+                </a>
+                <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="container">
+                <div class="hero-grid">
+                    <div class="hero-content">
+                        <h1 class="hero-title">
+                            <span class="hero-brand-name">Swarna Setu</span>
+                            <span class="hero-tagline">Luxury Jewellery Boutique</span>
+                        </h1>
+                        <p class="hero-description">
+                            Discover exquisite handcrafted jewelry from India's finest artisans.
+                            Each piece tells a story of tradition, elegance, and timeless beauty.
+                        </p>
+                        <div class="hero-actions">
+                            <a href="products.html" class="btn btn-primary btn-lg">Explore Collections</a>
+                            <a href="face_ar.html" class="btn btn-outline btn-lg">Try AR Experience</a>
+                        </div>
+                        <div class="hero-features">
+                            <div class="hero-feature">
+                                <span class="hero-feature-icon">✨</span>
+                                <span class="hero-feature-text">Certified Jewelry</span>
+                            </div>
+                            <div class="hero-feature">
+                                <span class="hero-feature-icon">🚚</span>
+                                <span class="hero-feature-text">Free Shipping</span>
+                            </div>
+                            <div class="hero-feature">
+                                <span class="hero-feature-icon">🔒</span>
+                                <span class="hero-feature-text">Secure Payment</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-image">
+                        <div class="hero-image-wrapper">
+                            <img src="assets/images/gold_ring.jpg" alt="Luxury Jewelry" id="heroImage">
+                            <div class="hero-image-badge">
+                                <span class="badge badge-gold">New Arrival</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Bar (Mobile) -->
+        <section class="search-section-mobile">
+            <div class="container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search for jewelry, shops..." id="searchInput">
+                </div>
+            </div>
+        </section>
+
+        <!-- Gender Tabs -->
+        <section class="gender-section">
+            <div class="container">
+                <div class="gender-tabs" id="genderTabs">
+                    <button class="chip chip-outline active" data-gender="all">All</button>
+                    <button class="chip chip-outline" data-gender="men">Men</button>
+                    <button class="chip chip-outline" data-gender="women">Women</button>
+                    <button class="chip chip-outline" data-gender="kids">Kids</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Material Filter -->
+        <section class="material-section">
+            <div class="container">
+                <div class="material-filter scroll-container no-scrollbar" id="materialFilter">
+                    <button class="chip chip-default active" data-material="all">All</button>
+                    <button class="chip chip-default" data-material="gold">Gold</button>
+                    <button class="chip chip-default" data-material="diamond">Diamond</button>
+                    <button class="chip chip-default" data-material="silver">Silver</button>
+                    <button class="chip chip-default" data-material="platinum">Platinum</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Grid -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">Shop by Category</h2>
+                <div class="category-grid grid grid-cols-4" id="categoryGrid">
+                    <!-- Categories will be loaded here -->
+                    <div class="skeleton" style="height: 120px;"></div>
+                    <div class="skeleton" style="height: 120px;"></div>
+                    <div class="skeleton" style="height: 120px;"></div>
+                    <div class="skeleton" style="height: 120px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Iconic Collections -->
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Iconic Collections</h2>
+                        <p class="section-subtitle">Timeless designs that define elegance</p>
+                    </div>
+                    <a href="products.html?collection=iconic" class="view-all-link">
+                        View All →
+                    </a>
+                </div>
+                <div class="collections-scroll scroll-container no-scrollbar" id="iconicCollections">
+                    <!-- Collection cards will be loaded here -->
+                    <div class="skeleton" style="width: 280px; height: 120px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 120px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 120px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- New Arrivals -->
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">New Arrivals</h2>
+                        <p class="section-subtitle">Fresh designs just for you</p>
+                    </div>
+                    <a href="products.html?sort=newest" class="view-all-link">
+                        View All →
+                    </a>
+                </div>
+                <div class="products-grid grid grid-cols-4" id="newArrivals">
+                    <!-- Product cards will be loaded here -->
+                    <div class="skeleton" style="height: 400px;"></div>
+                    <div class="skeleton" style="height: 400px;"></div>
+                    <div class="skeleton" style="height: 400px;"></div>
+                    <div class="skeleton" style="height: 400px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Selling -->
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Top Selling</h2>
+                        <p class="section-subtitle">Customer favorites</p>
+                    </div>
+                    <a href="products.html?sort=popular" class="view-all-link">
+                        View All →
+                    </a>
+                </div>
+                <div class="scroll-container no-scrollbar" id="topSelling">
+                    <!-- Product cards will be loaded here -->
+                    <div class="skeleton" style="width: 280px; height: 400px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 400px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 400px;"></div>
+                    <div class="skeleton" style="width: 280px; height: 400px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Custom Order Banner -->
+        <section class="section">
+            <div class="container">
+                <div class="custom-order-banner">
+                    <div class="custom-order-content">
+                        <h3 class="custom-order-title">Create Your Dream Piece</h3>
+                        <p class="custom-order-description">
+                            Work with our expert jewellers to design custom jewelry that reflects your unique style and
+                            story.
+                        </p>
+                        <a href="custom-order.html" class="btn btn-primary btn-lg">Start Designing</a>
+                    </div>
+                    <div class="custom-order-image">
+                        <img src="assets/images/storefront_bg.png" alt="Custom Jewelry Design" id="customOrderImage">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Jewellers -->
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Featured Jewellers</h2>
+                        <p class="section-subtitle">Trusted partners across India</p>
+                    </div>
+                    <a href="shops.html" class="view-all-link">
+                        View All →
+                    </a>
+                </div>
+                <div class="shops-grid grid grid-cols-3" id="featuredShops">
+                    <!-- Shop cards will be loaded here -->
+                    <div class="skeleton" style="height: 300px;"></div>
+                    <div class="skeleton" style="height: 300px;"></div>
+                    <div class="skeleton" style="height: 300px;"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Discover</h3>
+                    <div class="footer-links">
+                        <a href="products.html" class="footer-link">All Collections</a>
+                        <a href="products.html?category=rings" class="footer-link">Rings</a>
+                        <a href="products.html?category=necklaces" class="footer-link">Necklaces</a>
+                        <a href="products.html?category=earrings" class="footer-link">Earrings</a>
+                        <a href="products.html?category=bangles" class="footer-link">Bangles</a>
+                        <a href="custom-order.html" class="footer-link">Custom Design</a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Support</h3>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Help Center</a>
+                        <a href="#" class="footer-link">Track Order</a>
+                        <a href="#" class="footer-link">Returns & Exchange</a>
+                        <a href="#" class="footer-link">Shipping Info</a>
+                        <a href="#" class="footer-link">Size Guide</a>
+                        <a href="#" class="footer-link">Contact Us</a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Company</h3>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">About Us</a>
+                        <a href="shops.html" class="footer-link">Partner Jewellers</a>
+                        <a href="#" class="footer-link">Careers</a>
+                        <a href="#" class="footer-link">Press</a>
+                        <a href="#" class="footer-link">Privacy Policy</a>
+                        <a href="#" class="footer-link">Terms of Service</a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h3 class="footer-section-title">Connect</h3>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Facebook</a>
+                        <a href="#" class="footer-link">Instagram</a>
+                        <a href="#" class="footer-link">Twitter</a>
+                        <a href="#" class="footer-link">Pinterest</a>
+                        <a href="#" class="footer-link">YouTube</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    © 2026 Swarna Setu. All rights reserved.
+                </p>
+                <div class="footer-social">
+                    <a href="#" class="footer-social-link" aria-label="Facebook">📘</a>
+                    <a href="#" class="footer-social-link" aria-label="Instagram">📷</a>
+                    <a href="#" class="footer-social-link" aria-label="Twitter">🐦</a>
+                    <a href="#" class="footer-social-link" aria-label="Pinterest">📌</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/components/header.js"></script>
+    <script src="js/components/product-card.js"></script>
+    <script src="js/components/shop-card.js"></script>
+    <script src="js/pages/home.js"></script>
+</body>
+
+</html>

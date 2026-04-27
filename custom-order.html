@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bespoke — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="bespoke">
+  <main class="au-page">
+    <header class="au-page-head">
+      <div class="au-page-head__crumbs"><a href="index.html">House</a><span>·</span>Bespoke</div>
+      <div class="au-page-head__row">
+        <div>
+          <h1>The <em>Bespoke</em> table</h1>
+          <p>Bring us a sketch, a photograph, a memory. Twenty-one days later, the piece arrives in your aura, certified, hallmarked, hand-tied.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="au-bespoke-grid">
+      <div class="au-bespoke-stages">
+        <div class="au-bespoke-stage">
+          <span class="n">01</span>
+          <div>
+            <h4>Sketch &amp; Reference</h4>
+            <p>Upload anything — a photograph of your grandmother's haar, a phone-camera sketch, even a Pinterest reference. Tell us what made it yours.</p>
+          </div>
+        </div>
+        <div class="au-bespoke-stage">
+          <span class="n">02</span>
+          <div>
+            <h4>House Reply (within 36 hours)</h4>
+            <p>One of our master jewellers replies on WhatsApp with three CAD options, three karat options, and a final price.</p>
+          </div>
+        </div>
+        <div class="au-bespoke-stage">
+          <span class="n">03</span>
+          <div>
+            <h4>Approve &amp; Hand-Make</h4>
+            <p>You approve. We pay the atelier 50% to begin. The piece is hammered, set, and finished by the same hands across 21 days.</p>
+          </div>
+        </div>
+        <div class="au-bespoke-stage">
+          <span class="n">04</span>
+          <div>
+            <h4>Naam Karan &amp; Delivery</h4>
+            <p>Your foil-pressed name on the certificate. Ivory case. Silken thread. Free insurance, free shipping anywhere in India.</p>
+          </div>
+        </div>
+      </div>
+
+      <form class="au-form-card" style="background: #fff; padding: 36px; border-radius: 24px;" onsubmit="event.preventDefault(); window.AURA?.toast('Sent — the house will reply within 36 hours.'); this.reset();">
+        <h2>Tell us your idea</h2>
+        <p class="lede">A few details so the atelier can prepare.</p>
+
+        <div class="field">
+          <label>Your name</label>
+          <input type="text" placeholder="Aanya R." required />
+        </div>
+        <div class="field">
+          <label>WhatsApp number</label>
+          <input type="tel" placeholder="+91 98765 43210" required />
+        </div>
+        <div class="field">
+          <label>What kind of piece?</label>
+          <select>
+            <option>Necklace · Polki / Temple / Solitaire</option>
+            <option>Ring · Solitaire / Band / Cocktail</option>
+            <option>Earrings · Jhumka / Drop / Stud</option>
+            <option>Maang Tikka / Mathapatti</option>
+            <option>Anklet · Payal</option>
+            <option>Waist Belt · Kandora</option>
+            <option>Bridal Set · Full</option>
+            <option>Other / I'll explain</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Budget (we'll work within it)</label>
+          <select>
+            <option>Under ₹1,00,000</option>
+            <option>₹1,00,000 – ₹3,00,000</option>
+            <option>₹3,00,000 – ₹6,00,000</option>
+            <option>₹6,00,000 – ₹12,00,000</option>
+            <option>Above ₹12,00,000</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>The story</label>
+          <textarea placeholder="A sketch from a memory, the piece you wish you had, the wedding it's for…"></textarea>
+        </div>
+
+        <button type="submit" class="au-submit" data-cursor="Send">Send to the Atelier →</button>
+      </form>
+    </section>
+
+    <section class="au-page-foot-cta">
+      <h2>Or speak to a jeweller <em>now</em>.</h2>
+      <a href="https://wa.me/919999999999" target="_blank" data-cursor="Chat">WhatsApp the House →</a>
+    </section>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+</body>
+</html>
