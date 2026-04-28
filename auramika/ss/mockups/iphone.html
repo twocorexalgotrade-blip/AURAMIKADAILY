@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1242">
+<title>Auramika Daily — iPhone App Store Screenshots (1242 × 2688)</title>
+<!--
+  HOW TO EXPORT:
+  1. Open this file in Chrome
+  2. Set zoom to 100% (Cmd+0)
+  3. For each slide, use a full-page screenshot tool:
+     • Chrome extension: "Full Page Screen Capture" or "GoFullPage"
+     • Or: node export.js (see sibling file)
+  Each .slide div is exactly 1242 × 2688 px — iPhone 6.5" App Store size.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Jost:wght@300;400;500&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #161616;
+  padding: 80px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 70px;
+  font-family: 'Jost', -apple-system, 'Helvetica Neue', sans-serif;
+}
+
+.label {
+  font-family: 'Courier New', monospace;
+  font-size: 17px;
+  color: #666;
+  letter-spacing: 2px;
+  align-self: flex-start;
+  margin-left: calc(50vw - 621px + 60px);
+  margin-bottom: -52px;
+}
+
+/* ─────────────────────────────────────────────
+   SLIDE  1242 × 2688 px
+───────────────────────────────────────────── */
+.slide {
+  width: 1242px;
+  height: 2688px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Themes ── */
+.dark {
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(196,147,63,.11) 0%, transparent 52%),
+    radial-gradient(ellipse at 82% 82%, rgba(196,147,63,.07) 0%, transparent 52%),
+    linear-gradient(158deg, #091d13 0%, #122a1c 55%, #091d13 100%);
+}
+.cream {
+  background:
+    radial-gradient(ellipse at 22% 22%, rgba(196,147,63,.16) 0%, transparent 48%),
+    radial-gradient(ellipse at 78% 75%, rgba(26,58,42,.06) 0%, transparent 48%),
+    linear-gradient(148deg, #f7f2ea 0%, #ede8de 55%, #f7f2ea 100%);
+}
+
+/* ── Top Section ── */
+.top {
+  width: 100%;
+  padding: 118px 110px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand {
+  font-weight: 300;
+  font-size: 44px;
+  letter-spacing: 14px;
+  text-transform: uppercase;
+  color: #c4933f;
+  margin-bottom: 68px;
+}
+
+.headline {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 138px;
+  line-height: 1.0;
+  letter-spacing: -4px;
+  margin-bottom: 50px;
+}
+.dark  .headline { color: #f5f0e8; }
+.cream .headline { color: #1a3a2a; }
+
+.rule {
+  width: 110px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #c4933f 30%, #c4933f 70%, transparent);
+  margin: 0 auto 42px;
+  flex-shrink: 0;
+}
+
+.sub {
+  font-weight: 300;
+  font-size: 38px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+.dark  .sub { color: rgba(196,147,63,.85); }
+.cream .sub { color: rgba(26,58,42,.62); }
+
+/* ── Phone Frame ── */
+.phone-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 0 32px;
+}
+
+.phone {
+  width: 648px;
+  height: 1396px;
+  background: #1b1b1d;
+  border-radius: 84px;
+  padding: 20px;
+  position: relative;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.13),
+    inset 0 -2px 0 rgba(0,0,0,.55),
+    inset 2px 0 0 rgba(255,255,255,.05),
+    inset -2px 0 0 rgba(0,0,0,.25),
+    0 0 0 1.5px rgba(255,255,255,.06),
+    0 0 0 3px #090909,
+    0 60px 160px rgba(0,0,0,.72),
+    0 28px 72px rgba(0,0,0,.42);
+}
+
+/* Dynamic Island */
+.phone::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 132px;
+  height: 38px;
+  background: #000;
+  border-radius: 22px;
+  z-index: 20;
+  box-shadow: 0 2px 10px rgba(0,0,0,.9);
+}
+
+/* Power button */
+.phone::before {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 230px;
+  width: 4px;
+  height: 118px;
+  background: #282828;
+  border-radius: 0 3px 3px 0;
+  box-shadow: 1px 0 3px rgba(0,0,0,.5);
+}
+
+.vol-mute, .vol-up, .vol-dn {
+  position: absolute;
+  left: -5px;
+  width: 4px;
+  background: #282828;
+  border-radius: 3px 0 0 3px;
+  box-shadow: -1px 0 3px rgba(0,0,0,.5);
+}
+.vol-mute { top: 188px; height: 52px; }
+.vol-up   { top: 266px; height: 98px; }
+.vol-dn   { top: 384px; height: 98px; }
+
+.screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 66px;
+  overflow: hidden;
+  background: #000;
+}
+
+.screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+/* ── Bottom Section ── */
+.bottom {
+  width: 100%;
+  padding: 28px 80px 108px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 42px;
+  flex-shrink: 0;
+}
+
+.chip {
+  padding: 20px 46px;
+  border-radius: 50px;
+  font-weight: 400;
+  font-size: 31px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.chip-dk { border: 1.5px solid rgba(196,147,63,.55); background: rgba(196,147,63,.10); color: #c4933f; }
+.chip-cr { border: 1.5px solid rgba(26,58,42,.28);  background: rgba(26,58,42,.06);   color: #1a3a2a; }
+
+.pill {
+  padding: 24px 88px;
+  border-radius: 50px;
+  font-weight: 500;
+  font-size: 35px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+}
+.pill-gold  {
+  background: linear-gradient(135deg, #b8741e 0%, #e0b55e 50%, #b8741e 100%);
+  color: #091d13;
+  box-shadow: 0 14px 52px rgba(184,116,30,.48);
+}
+.pill-green {
+  background: linear-gradient(135deg, #0f2218 0%, #1c4030 50%, #0f2218 100%);
+  color: #c4933f;
+  border: 1px solid rgba(196,147,63,.28);
+  box-shadow: 0 14px 52px rgba(0,0,0,.38);
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     SLIDE 1 · Shop Your Vibe · Dark Green
+════════════════════════════════════════════════ -->
+<p class="label">Slide 1 / 5 — iPhone 6.5" — 1242 × 2688 px</p>
+<div class="slide dark">
+  <div class="top">
+    <div class="brand">Auramika Daily</div>
+    <div class="headline">Shop<br>Your<br>Vibe</div>
+    <div class="rule"></div>
+    <div class="sub">Jewellery for Every Mood</div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="vol-mute"></div>
+      <div class="vol-up"></div>
+      <div class="vol-dn"></div>
+      <div class="screen">
+        <img src="../Screenshot_20260427_181144.png" alt="Auramika Daily — Home">
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="chip chip-dk">Gold</span>
+    <span class="chip chip-dk">Silver</span>
+    <span class="chip chip-dk">Diamond</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SLIDE 2 · Get It in 2 Hours · Cream
+════════════════════════════════════════════════ -->
+<p class="label">Slide 2 / 5 — iPhone 6.5" — 1242 × 2688 px</p>
+<div class="slide cream">
+  <div class="top">
+    <div class="brand">Auramika Daily</div>
+    <div class="headline">Get It<br>in<br>2 Hours</div>
+    <div class="rule"></div>
+    <div class="sub">Same-Day Delivery</div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="vol-mute"></div>
+      <div class="vol-up"></div>
+      <div class="vol-dn"></div>
+      <div class="screen">
+        <img src="../Screenshot_20260427_181034.png" alt="Auramika Daily — Shop">
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="pill pill-gold">⚡ 2-Hour Delivery</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SLIDE 3 · Explore Collections · Dark Green
+════════════════════════════════════════════════ -->
+<p class="label">Slide 3 / 5 — iPhone 6.5" — 1242 × 2688 px</p>
+<div class="slide dark">
+  <div class="top">
+    <div class="brand">Auramika Daily</div>
+    <div class="headline">Explore<br>Collections</div>
+    <div class="rule"></div>
+    <div class="sub">Bridal · Traditional · Minimal</div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="vol-mute"></div>
+      <div class="vol-up"></div>
+      <div class="vol-dn"></div>
+      <div class="screen">
+        <img src="../Screenshot_20260427_181201.png" alt="Auramika Daily — Categories">
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="chip chip-dk">Chinchpeti</span>
+    <span class="chip chip-dk">Thushi</span>
+    <span class="chip chip-dk">Royal</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SLIDE 4 · Premium Studios · Cream
+════════════════════════════════════════════════ -->
+<p class="label">Slide 4 / 5 — iPhone 6.5" — 1242 × 2688 px</p>
+<div class="slide cream">
+  <div class="top">
+    <div class="brand">Auramika Daily</div>
+    <div class="headline">Premium<br>Studios,<br>Curated</div>
+    <div class="rule"></div>
+    <div class="sub">Top Artisans · Verified Quality</div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="vol-mute"></div>
+      <div class="vol-up"></div>
+      <div class="vol-dn"></div>
+      <div class="screen">
+        <img src="../Screenshot_20260427_181231.png" alt="Auramika Daily — Studio Profile">
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="pill pill-green">★ 4.8 Rated Studios</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SLIDE 5 · AI Magic Mirror · Dark Green
+════════════════════════════════════════════════ -->
+<p class="label">Slide 5 / 5 — iPhone 6.5" — 1242 × 2688 px</p>
+<div class="slide dark">
+  <div class="top">
+    <div class="brand">Auramika Daily</div>
+    <div class="headline">AI<br>Magic<br>Mirror</div>
+    <div class="rule"></div>
+    <div class="sub">Upload Outfit · Get Matched</div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="vol-mute"></div>
+      <div class="vol-up"></div>
+      <div class="vol-dn"></div>
+      <div class="screen">
+        <img src="../Screenshot_20260427_181921.png" alt="Auramika Daily — Magic Mirror">
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="pill pill-gold">✦ AI Style Matching</span>
+  </div>
+</div>
+
+</body>
+</html>

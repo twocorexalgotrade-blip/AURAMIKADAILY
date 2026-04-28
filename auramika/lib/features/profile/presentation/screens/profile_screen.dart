@@ -464,61 +464,69 @@ class _ProfileHeader extends ConsumerWidget {
       ).animate().fadeIn(duration: AppConstants.animNormal);
     }
 
-    return Container(
-      margin: const EdgeInsets.all(AppConstants.paddingM),
-      padding: const EdgeInsets.all(AppConstants.paddingM),
-      decoration: BoxDecoration(
-        color: AppColors.forestGreen,
-        borderRadius: BorderRadius.circular(AppConstants.radiusM),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.gold.withValues(alpha: 0.2),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.5), width: 1.5),
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => const ProfileDetailsScreen(),
+      )),
+      child: Container(
+        margin: const EdgeInsets.all(AppConstants.paddingM),
+        padding: const EdgeInsets.all(AppConstants.paddingM),
+        decoration: BoxDecoration(
+          color: AppColors.forestGreen,
+          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.gold.withValues(alpha: 0.2),
+                border: Border.all(color: AppColors.gold.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: const Center(
+                child: Icon(Icons.person_rounded, size: 30, color: AppColors.gold),
+              ),
             ),
-            child: const Center(
-              child: Icon(Icons.person_rounded, size: 30, color: AppColors.gold),
-            ),
-          ),
-          const SizedBox(width: AppConstants.paddingM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile.name,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.white,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  profile.phone,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.white.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (profile.email.isNotEmpty)
+            const SizedBox(width: AppConstants.paddingM),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    profile.email,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.55),
-                      fontSize: 11,
+                    profile.name.isNotEmpty ? profile.name : 'Add your name',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: profile.name.isNotEmpty
+                          ? AppColors.white
+                          : AppColors.white.withValues(alpha: 0.5),
+                      fontSize: 16,
+                      fontStyle: profile.name.isEmpty ? FontStyle.italic : FontStyle.normal,
                     ),
                   ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    profile.phone.isNotEmpty ? profile.phone : 'Tap to complete profile',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (profile.email.isNotEmpty)
+                    Text(
+                      profile.email,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.55),
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.edit_outlined, color: AppColors.gold, size: 18),
-        ],
+            const Icon(Icons.edit_outlined, color: AppColors.gold, size: 18),
+          ],
+        ),
       ),
     ).animate().fadeIn(duration: AppConstants.animNormal).slideY(begin: -0.05, end: 0);
   }

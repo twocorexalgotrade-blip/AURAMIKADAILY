@@ -10,11 +10,15 @@ import '../../../../core/constants/app_text_styles.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirectPath;
   final bool isCreateAccount;
+  final String? initialPhone;
+  final bool alreadyExists;
 
   const LoginScreen({
     super.key,
     this.redirectPath,
     this.isCreateAccount = false,
+    this.initialPhone,
+    this.alreadyExists = false,
   });
 
   @override
@@ -27,7 +31,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _dobCtrl = TextEditingController();
+  DateTime? _selectedDob;
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialPhone != null) {
+      _phoneCtrl.text = widget.initialPhone!.replaceFirst('+91', '').trim();
+    }
+    if (widget.alreadyExists) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'This number is already registered. Please sign in instead.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
+            ),
+            backgroundColor: AppColors.terraCotta,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -110,12 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 16),
-                  _buildField(
-                    controller: _dobCtrl,
-                    label: 'Date of Birth',
-                    hint: 'DD/MM/YYYY',
-                    keyboardType: TextInputType.datetime,
-                  ),
+                  _buildDateField(),
                   const SizedBox(height: 16),
                 ],
 
@@ -228,6 +252,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           keyboardType: keyboardType,
           decoration: _inputDecoration(hint),
           validator: validator,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Date of Birth', style: AppTextStyles.labelMedium),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: _selectedDob ?? DateTime(2000),
+              firstDate: DateTime(1940),
+              lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
+              builder: (context, child) => Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: AppColors.forestGreen,
+                    onPrimary: AppColors.white,
+                    surface: AppColors.background,
+                  ),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) {
+              setState(() {
+                _selectedDob = picked;
+                _dobCtrl.text =
+                    '${picked.day.toString().padLeft(2, '0')}/'
+                    '${picked.month.toString().padLeft(2, '0')}/'
+                    '${picked.year}';
+              });
+            }
+          },
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: _dobCtrl,
+              readOnly: true,
+              decoration: _inputDecoration('Tap to select').copyWith(
+                suffixIcon: const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Please select your date of birth' : null,
+            ),
+          ),
         ),
       ],
     );

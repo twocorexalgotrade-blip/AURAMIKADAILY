@@ -41,6 +41,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   bool _sending = true;
   bool _verifying = false;
   String? _error;
+  int _filledCount = 0;
 
   @override
   void initState() {
@@ -89,6 +90,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     );
   }
 
+  void _clearBoxes() {
+    for (final c in _ctls) c.clear();
+    setState(() => _filledCount = 0);
+    _nodes[0].requestFocus();
+  }
+
   Future<void> _verify() async {
     final otp = _ctls.map((c) => c.text).join();
     if (otp.length < 6 || _verificationId == null) return;
@@ -106,9 +113,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       await _signIn(credential);
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        _clearBoxes();
         setState(() {
           _verifying = false;
-          _error = e.message ?? 'Invalid OTP. Please try again.';
+          _error = 'Incorrect code. Please check the SMS and try again.';
         });
       }
     }
@@ -120,39 +128,24 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           await FirebaseAuth.instance.signInWithCredential(credential);
       if (!mounted) return;
 
-      final isNewUser = result.additionalUserInfo?.isNewUser ?? false;
+      final isNewUser = result.additionalUserInfo?.isNewUser ?? true;
 
+      // Number already registered — sign out and send to the sign-in page
       if (widget.expectNewUser && !isNewUser) {
         await FirebaseAuth.instance.signOut();
-        if (mounted) {
-          setState(() {
-            _verifying = false;
-            _sending = false;
-            _error =
-                'This number is already registered. Please sign in instead.';
-          });
-        }
+        if (!mounted) return;
+        context.go('/auth/login', extra: {
+          'redirect': widget.redirectPath,
+          'phone': widget.phone,
+          'alreadyExists': true,
+        });
         return;
       }
 
-      if (!widget.expectNewUser && isNewUser) {
-        await FirebaseAuth.instance.signOut();
-        if (mounted) {
-          setState(() {
-            _verifying = false;
-            _sending = false;
-            _error =
-                'No account found for this number. Please create an account first.';
-          });
-        }
-        return;
-      }
-
-      ref
-          .read(authProvider.notifier)
-          .login(result.user?.uid ?? widget.phone);
+      ref.read(authProvider.notifier).login(result.user?.uid ?? widget.phone);
 
       if (widget.expectNewUser) {
+        // New account — save all registration fields
         ref.read(userProfileProvider.notifier).update(
               name: widget.name,
               email: widget.email,
@@ -160,12 +153,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               dob: widget.dob,
             );
       } else {
-        ref.read(userProfileProvider.notifier).reload();
+        // Returning user — restore Hive data and seed phone from auth
+        ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
       }
 
       context.go(widget.redirectPath);
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        _clearBoxes();
         setState(() {
           _verifying = false;
           _sending = false;
@@ -182,8 +177,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (value.isEmpty && index > 0) {
       _nodes[index - 1].requestFocus();
     }
-    // Auto-verify when all 6 digits entered
     final otp = _ctls.map((c) => c.text).join();
+    setState(() => _filledCount = otp.length);
     if (otp.length == 6) _verify();
   }
 

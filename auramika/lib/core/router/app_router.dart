@@ -190,6 +190,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return LoginScreen(
             redirectPath: extra?['redirect'] as String?,
             isCreateAccount: false,
+            initialPhone: extra?['phone'] as String?,
+            alreadyExists: extra?['alreadyExists'] as bool? ?? false,
           );
         },
       ),
@@ -219,9 +221,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.orderConfirmation,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Order Confirmed!')),
-        ),
+        builder: (context, state) => const OrderConfirmationScreen(),
       ),
     ],
   );

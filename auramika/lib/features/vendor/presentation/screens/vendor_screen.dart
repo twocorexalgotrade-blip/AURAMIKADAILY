@@ -1,0 +1,797 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../shared/widgets/product_card.dart';
+
+// ── Vendor Product Model ──────────────────────────────────────────────────────
+class VendorProduct {
+  final String id;
+  final String name;
+  final double price;
+  final String material; // 'Gold' | 'Silver'
+  final String imageUrl;
+  final bool isExpress;
+  final bool isWishlisted;
+
+  const VendorProduct({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.material,
+    required this.imageUrl,
+    this.isExpress = true,
+    this.isWishlisted = false,
+  });
+}
+
+// ── Vendor Model ──────────────────────────────────────────────────────────────
+class VendorInfo {
+  final String id;
+  final String name;
+  final String tagline;
+  final String location;
+  final int totalProducts;
+  final double rating;
+  final int reviewCount;
+  final Color brandColor;
+  final List<VendorProduct> products;
+
+  const VendorInfo({
+    required this.id,
+    required this.name,
+    required this.tagline,
+    required this.location,
+    required this.totalProducts,
+    required this.rating,
+    required this.reviewCount,
+    required this.brandColor,
+    required this.products,
+  });
+}
+
+// ── Mock Vendor Data ──────────────────────────────────────────────────────────
+final _mockVendor = VendorInfo(
+  id: 'v1',
+  name: 'Auramika Studio',
+  tagline: 'Premium Imitation Jewelry · Gold · Silver · Diamond',
+  location: 'Jaipur, Rajasthan',
+  totalProducts: 16,
+  rating: 4.8,
+  reviewCount: 342,
+  brandColor: AppColors.forestGreen,
+  products: const [
+    VendorProduct(id: 'e1', name: 'Chunky Gold Hoops', price: 499, material: 'Gold', imageUrl: 'assets/images/products/e1_gold_hoops.png', isExpress: true),
+    VendorProduct(id: 'e3', name: 'Pearl Studs', price: 299, material: 'Gold', imageUrl: 'assets/images/products/e3_pearl_studs.png', isExpress: true),
+    VendorProduct(id: 'e2', name: 'Crystal Drop Earrings', price: 899, material: 'Silver', imageUrl: 'assets/images/products/e2_crystal_drop.png', isExpress: true),
+    VendorProduct(id: 'n1', name: 'Herringbone Chain', price: 699, material: 'Gold', imageUrl: 'assets/images/products/n1_herringbone.png', isExpress: true),
+    VendorProduct(id: 'n2', name: 'Diamond Tennis Necklace', price: 1499, material: 'Silver', imageUrl: 'assets/images/products/n2_tennis_neck.png', isExpress: false),
+    VendorProduct(id: 'e8', name: 'Kundan Chandbali', price: 1299, material: 'Gold', imageUrl: 'assets/images/products/e8_kundan_chandbali.png', isExpress: true),
+    VendorProduct(id: 'r1', name: 'Signet Ring', price: 499, material: 'Gold', imageUrl: 'assets/images/products/r1_signet.png', isExpress: true),
+    VendorProduct(id: 'r2', name: 'Solitaire Ring', price: 599, material: 'Silver', imageUrl: 'assets/images/products/r2_solitaire.png', isExpress: true),
+    VendorProduct(id: 'b1', name: 'Tennis Bracelet', price: 999, material: 'Silver', imageUrl: 'assets/images/products/b1_tennis_bracelet.png', isExpress: true),
+    VendorProduct(id: 'b2', name: 'Gold Link Bracelet', price: 699, material: 'Gold', imageUrl: 'assets/images/products/b2_gold_link.png', isExpress: true),
+    VendorProduct(id: 'n8', name: 'Chunky Curb Chain', price: 999, material: 'Gold', imageUrl: 'assets/images/products/n8_curb_chain.png', isExpress: true),
+    VendorProduct(id: 'e6', name: 'Rose Gold Huggies', price: 399, material: 'Gold', imageUrl: 'assets/images/products/e6_rose_huggies.png', isExpress: true),
+    VendorProduct(id: 'n15', name: 'Zircon Statement Choker', price: 1999, material: 'Silver', imageUrl: 'assets/images/products/n15_zircon_choker.png', isExpress: true),
+    VendorProduct(id: 'r5', name: 'Cocktail Stone Ring', price: 899, material: 'Gold', imageUrl: 'assets/images/products/r5_cocktail_ring.png', isExpress: false),
+    VendorProduct(id: 'b8', name: 'Zircon Bangles Set', price: 1499, material: 'Gold', imageUrl: 'assets/images/products/b8_zircon_bangles.png', isExpress: true),
+    VendorProduct(id: 'e13', name: 'Baroque Pearl Drop', price: 999, material: 'Gold', imageUrl: 'assets/images/products/e13_baroque_pearl.png', isExpress: true),
+  ],
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VENDOR SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// AURAMIKA Vendor Shop Screen — Phase 4
+///
+/// Layout:
+///   • Collapsing editorial banner header (SliverAppBar)
+///   • Centered vendor avatar + name + stats
+///   • Sticky material tabs: [All] [Gold] [Silver]
+///   • Filtered 2-column product grid
+///   • "Gold" tab STRICTLY shows only Gold items
+class VendorScreen extends StatefulWidget {
+  final String? vendorId; // from router; ignored in mock (always shows _mockVendor)
+  const VendorScreen({super.key, this.vendorId});
+
+  @override
+  State<VendorScreen> createState() => _VendorScreenState();
+}
+
+class _VendorScreenState extends State<VendorScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final vendor = _mockVendor;
+
+  // ── Material filter tabs ──────────────────────────────────────────────────
+  static const List<String> _tabs = ['All', 'Gold', 'Silver', 'Coming Soon'];
+
+  List<VendorProduct> get _filteredProducts {
+    final tab = _tabs[_tabController.index];
+    if (tab == 'All') return vendor.products;
+    if (tab == 'Coming Soon') return [];
+    return vendor.products.where((p) => p.material == tab).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filteredProducts;
+    final currentTab = _tabs[_tabController.index];
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── Collapsing Banner ───────────────────────────────────────────
+          SliverAppBar(
+            expandedHeight: 260,
+            pinned: true,
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+              color: AppColors.white,
+              onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.white),
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const Icon(Icons.search_rounded, size: 20, color: AppColors.white),
+                onPressed: () {},
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: _VendorBannerHeader(vendor: vendor),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(0.5),
+              child: Container(height: 0.5, color: AppColors.divider),
+            ),
+          ),
+
+          // ── Vendor Info Card ────────────────────────────────────────────
+          SliverToBoxAdapter(child: _VendorInfoCard(vendor: vendor)),
+
+          // ── Sticky Material Tabs ────────────────────────────────────────
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyTabBarDelegate(
+              tabController: _tabController,
+              tabs: _tabs,
+            ),
+          ),
+
+          // ── Filter summary bar ──────────────────────────────────────────
+          if (filtered.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _FilterSummaryBar(count: filtered.length, material: currentTab),
+            ),
+
+          // ── Product grid or empty state ─────────────────────────────────
+          if (filtered.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _EmptyMaterialState(material: currentTab),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.paddingM,
+                AppConstants.paddingS,
+                AppConstants.paddingM,
+                100,
+              ),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.58,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) {
+                    final p = filtered[i];
+                    return ProductCard(
+                      id: p.id,
+                      brandName: 'AURAMIKA',
+                      productName: p.name,
+                      price: p.price,
+                      material: p.material,
+                      imageUrl: p.imageUrl,
+                      isExpressAvailable: p.isExpress,
+                      isWishlisted: p.isWishlisted,
+                      animationIndex: i,
+                      onTap: () => context.push(AppRoutes.product(p.id)),
+                    );
+                  },
+                  childCount: filtered.length,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Vendor Banner Header ──────────────────────────────────────────────────────
+class _VendorBannerHeader extends StatelessWidget {
+  final VendorInfo vendor;
+  const _VendorBannerHeader({required this.vendor});
+
+  static const String _bannerImage =
+      'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=800&q=80';
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // ── Editorial photo background ────────────────────────────────────
+        CachedNetworkImage(
+          imageUrl: _bannerImage,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(
+            color: vendor.brandColor,
+            child: CustomPaint(painter: _BannerPatternPainter()),
+          ),
+          errorWidget: (_, __, ___) => Container(
+            color: vendor.brandColor,
+            child: CustomPaint(painter: _BannerPatternPainter()),
+          ),
+        ),
+
+        // ── Dark overlay for contrast ─────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                vendor.brandColor.withValues(alpha: 0.55),
+                vendor.brandColor.withValues(alpha: 0.90),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Pattern overlay ───────────────────────────────────────────────
+        CustomPaint(painter: _BannerPatternPainter()),
+
+        // ── Gold accent line (top) ────────────────────────────────────────
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          child: Container(color: AppColors.gold),
+        ),
+
+        // ── Centered avatar + name ────────────────────────────────────────
+        Positioned(
+          bottom: AppConstants.paddingL,
+          left: 0,
+          right: 0,
+          child: Column(
+            children: [
+              // Gold ring avatar
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.forestGreen,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gold, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.gold.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    vendor.name.substring(0, 1),
+                    style: AppTextStyles.displaySmall.copyWith(
+                      color: AppColors.gold,
+                      fontSize: 28,
+                    ),
+                  ),
+                ),
+              )
+                  .animate()
+                  .scale(
+                    begin: const Offset(0.8, 0.8),
+                    end: const Offset(1, 1),
+                    duration: AppConstants.animNormal,
+                    curve: Curves.easeOutBack,
+                  ),
+
+              const SizedBox(height: AppConstants.paddingS),
+
+              // Vendor name
+              Text(
+                vendor.name.toUpperCase(),
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: AppColors.white,
+                  letterSpacing: 4.0,
+                  fontSize: 13,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // Gold divider line
+              Container(
+                width: 32,
+                height: 1,
+                color: AppColors.gold.withValues(alpha: 0.6),
+              ),
+
+              const SizedBox(height: 4),
+
+              // Location
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 11,
+                    color: AppColors.gold,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    vendor.location,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.white.withValues(alpha: 0.75),
+                      fontSize: 10,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Vendor Info Card ──────────────────────────────────────────────────────────
+class _VendorInfoCard extends StatelessWidget {
+  final VendorInfo vendor;
+  const _VendorInfoCard({required this.vendor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.background,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingL,
+        vertical: AppConstants.paddingM,
+      ),
+      child: Column(
+        children: [
+          // Tagline
+          Text(
+            vendor.tagline,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: AppConstants.paddingM),
+
+          // Stats row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _StatItem(
+                value: '${vendor.totalProducts}',
+                label: 'Products',
+              ),
+              _StatDivider(),
+              _StatItem(
+                value: '${vendor.rating}',
+                label: 'Rating',
+                valueColor: AppColors.gold,
+              ),
+              _StatDivider(),
+              _StatItem(
+                value: '${vendor.reviewCount}',
+                label: 'Reviews',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppConstants.paddingM),
+
+          // Express delivery badge
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingM,
+              vertical: AppConstants.paddingS - 2,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.forestGreen.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppConstants.radiusS),
+              border: Border.all(
+                color: AppColors.forestGreen.withValues(alpha: 0.2),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.bolt, size: 13, color: AppColors.gold),
+                const SizedBox(width: 4),
+                Text(
+                  AppConstants.expressDeliveryLabel,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.forestGreen,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: AppConstants.animNormal)
+        .slideY(begin: 0.05, end: 0);
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color? valueColor;
+
+  const _StatItem({
+    required this.value,
+    required this.label,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.headlineSmall.copyWith(
+            fontSize: 18,
+            color: valueColor ?? AppColors.textPrimary,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.labelSmall.copyWith(
+            fontSize: 9,
+            letterSpacing: 1.5,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 0.5,
+      height: 32,
+      color: AppColors.divider,
+    );
+  }
+}
+
+// ── Sticky Tab Bar Delegate ───────────────────────────────────────────────────
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabController tabController;
+  final List<String> tabs;
+
+  const _StickyTabBarDelegate({
+    required this.tabController,
+    required this.tabs,
+  });
+
+  @override
+  double get minExtent => 48;
+  @override
+  double get maxExtent => 48;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
+      ),
+      child: TabBar(
+        controller: tabController,
+        tabs: tabs
+            .map((t) => Tab(
+                  child: Text(
+                    t.toUpperCase(),
+                    style: AppTextStyles.categoryChip.copyWith(
+                      fontSize: 11,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ))
+            .toList(),
+        labelColor: AppColors.forestGreen,
+        unselectedLabelColor: AppColors.textMuted,
+        indicatorColor: AppColors.gold,
+        indicatorWeight: 2,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyTabBarDelegate old) =>
+      old.tabController != tabController || old.tabs != tabs;
+}
+
+// ── Filter Summary Bar ────────────────────────────────────────────────────────
+class _FilterSummaryBar extends StatelessWidget {
+  final int count;
+  final String material;
+
+  const _FilterSummaryBar({required this.count, required this.material});
+
+  @override
+  Widget build(BuildContext context) {
+    final isGold = material == 'Gold';
+    final isSilver = material == 'Silver';
+    final matColor = isGold
+        ? AppColors.gold
+        : isSilver
+            ? const Color(0xFFC0C0C0)
+            : AppColors.textMuted;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingM,
+        vertical: AppConstants.paddingS + 2,
+      ),
+      child: Row(
+        children: [
+          // Count
+          Text(
+            '$count ${count == 1 ? 'item' : 'items'}',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+
+          if (material != 'All') ...[
+            const SizedBox(width: AppConstants.paddingS),
+            // Active filter chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: matColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppConstants.radiusXS),
+                border: Border.all(
+                  color: matColor.withValues(alpha: 0.4),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: matColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    material.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: matColor,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'ONLY',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                      color: matColor.withValues(alpha: 0.7),
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const Spacer(),
+
+          // Sort button
+          GestureDetector(
+            onTap: () {},
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.tune_rounded,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'SORT',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: 9,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+class _EmptyMaterialState extends StatelessWidget {
+  final String material;
+  const _EmptyMaterialState({required this.material});
+
+  @override
+  Widget build(BuildContext context) {
+    if (material == 'Coming Soon') {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.gold.withValues(alpha: 0.4), width: 1),
+                color: AppColors.gold.withValues(alpha: 0.06),
+              ),
+              child: const Icon(Icons.auto_awesome_outlined, size: 32, color: AppColors.gold),
+            )
+                .animate()
+                .fadeIn(duration: AppConstants.animSlow)
+                .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack),
+            const SizedBox(height: 20),
+            Text(
+              'NEW COLLECTION',
+              style: AppTextStyles.categoryChip.copyWith(
+                color: AppColors.gold,
+                letterSpacing: 4.0,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Dropping Soon',
+              style: AppTextStyles.headlineSmall.copyWith(
+                fontSize: 22,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(width: 32, height: 1, color: AppColors.gold.withValues(alpha: 0.5)),
+            const SizedBox(height: 12),
+            Text(
+              'Exclusive designs crafted for you',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textMuted,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final color =
+        material == 'Gold' ? AppColors.gold : const Color(0xFFC0C0C0);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.diamond_outlined, size: 48, color: color),
+          const SizedBox(height: AppConstants.paddingM),
+          Text(
+            'No $material items',
+            style: AppTextStyles.headlineSmall.copyWith(fontSize: 16),
+          ),
+          const SizedBox(height: AppConstants.paddingS),
+          Text(
+            'Check back soon for new arrivals',
+            style: AppTextStyles.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Banner Pattern Painter ────────────────────────────────────────────────────
+class _BannerPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.gold.withValues(alpha: 0.07)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    const spacing = 28.0;
+    for (double i = -size.height; i < size.width + size.height; i += spacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
