@@ -405,7 +405,8 @@ class _ProfileHeader extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppConstants.paddingL),
                   GestureDetector(
-                    onTap: () => context.push('/auth/login'),
+                    onTap: () => context.push('/auth/login',
+                        extra: {'redirect': '/profile'}),
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 13),
@@ -432,7 +433,8 @@ class _ProfileHeader extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppConstants.paddingM),
                   GestureDetector(
-                    onTap: () => context.push('/auth/register'),
+                    onTap: () => context.push('/auth/register',
+                        extra: {'redirect': '/profile'}),
                     child: Text.rich(
                       TextSpan(
                         style: AppTextStyles.bodySmall.copyWith(fontSize: 12),

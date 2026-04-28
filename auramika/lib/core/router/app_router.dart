@@ -15,7 +15,6 @@ import '../../features/profile/presentation/screens/gift_cards_screen.dart';
 import '../../features/profile/presentation/screens/help_screen.dart';
 import '../../features/profile/presentation/screens/orders_screen.dart';
 import '../../features/profile/presentation/screens/privacy_policy_screen.dart';
-import '../../features/profile/presentation/screens/profile_details_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/rate_review_screen.dart';
 import '../../features/profile/presentation/screens/refunds_screen.dart';
@@ -47,7 +46,7 @@ class AppRoutes {
   static const privacyPolicy = '/privacy-policy';
   static const termsConditions = '/terms-conditions';
   static const termsOfService = '/terms-of-service';
-  static const login = '/login';
+  static const login = '/auth/login';
   static const orderConfirmation = '/order-confirmation';
 
   static String product(String id) => '/product/$id';
@@ -122,6 +121,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return ProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(
+        path: '/style-vibe/:vibe',
+        name: 'styleVibe',
+        builder: (context, state) {
+          final vibeId = state.pathParameters['vibe'] ?? '';
+          return StyleVibeScreen(vibeId: vibeId);
         },
       ),
       GoRoute(

@@ -50,8 +50,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   @override
   void dispose() {
-    for (final c in _ctls) c.dispose();
-    for (final n in _nodes) n.dispose();
+    for (final c in _ctls) { c.dispose(); }
+    for (final n in _nodes) { n.dispose(); }
     super.dispose();
   }
 
