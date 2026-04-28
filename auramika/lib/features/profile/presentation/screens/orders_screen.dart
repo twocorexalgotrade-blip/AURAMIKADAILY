@@ -152,6 +152,12 @@ class _OrderCard extends StatelessWidget {
                   _ActionChip(label: 'Rate & Review', icon: Icons.star_border_rounded),
                   const SizedBox(width: 8),
                   _ActionChip(label: 'Reorder', icon: Icons.replay_rounded),
+                  const SizedBox(width: 8),
+                  _ActionChip(
+                    label: 'Request Refund',
+                    icon: Icons.replay_circle_filled_outlined,
+                    onTap: () => _showRefundSheet(context, order),
+                  ),
                 ] else if (order.status == OrderStatus.inTransit) ...[
                   _ActionChip(label: 'Track Order', icon: Icons.local_shipping_outlined),
                 ] else ...[
@@ -175,17 +181,163 @@ class _OrderCard extends StatelessWidget {
         child: const Icon(Icons.diamond_outlined,
             color: AppColors.gold, size: 24),
       );
+
+  static void _showRefundSheet(BuildContext context, OrderModel order) {
+    String? selectedReason;
+    const reasons = [
+      'Item received damaged',
+      'Wrong item delivered',
+      'Item not as described',
+      'Item missing from order',
+      'Other',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.radiusM)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppConstants.paddingL,
+            AppConstants.paddingM,
+            AppConstants.paddingL,
+            MediaQuery.of(ctx).viewInsets.bottom + AppConstants.paddingL,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppConstants.paddingM),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text('Request Refund',
+                  style: AppTextStyles.headlineMedium.copyWith(fontSize: 18)),
+              const SizedBox(height: 4),
+              Text(order.productName,
+                  style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textMuted, fontSize: 12)),
+              const SizedBox(height: AppConstants.paddingM),
+              Text('Select a reason',
+                  style: AppTextStyles.categoryChip
+                      .copyWith(fontSize: 10, letterSpacing: 2)),
+              const SizedBox(height: AppConstants.paddingS),
+              ...reasons.map((r) => GestureDetector(
+                    onTap: () => setState(() => selectedReason = r),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.paddingM, vertical: 11),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: selectedReason == r
+                            ? AppColors.forestGreen.withValues(alpha: 0.07)
+                            : AppColors.surface,
+                        border: Border.all(
+                          color: selectedReason == r
+                              ? AppColors.forestGreen
+                              : AppColors.divider,
+                          width: selectedReason == r ? 1.2 : 0.5,
+                        ),
+                        borderRadius:
+                            BorderRadius.circular(AppConstants.radiusXS),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selectedReason == r
+                                ? Icons.radio_button_checked_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            size: 16,
+                            color: selectedReason == r
+                                ? AppColors.forestGreen
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(r,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary)),
+                        ],
+                      ),
+                    ),
+                  )),
+              const SizedBox(height: AppConstants.paddingM),
+              SizedBox(
+                width: double.infinity,
+                child: GestureDetector(
+                  onTap: selectedReason == null
+                      ? null
+                      : () {
+                          Navigator.of(ctx).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Refund request submitted for ${order.productName}.',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.white),
+                              ),
+                              backgroundColor: AppColors.forestGreen,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusS),
+                              ),
+                            ),
+                          );
+                        },
+                  child: AnimatedContainer(
+                    duration: AppConstants.animFast,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      color: selectedReason == null
+                          ? AppColors.forestGreen.withValues(alpha: 0.35)
+                          : AppColors.forestGreen,
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusS),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'SUBMIT REQUEST',
+                        style: AppTextStyles.categoryChip.copyWith(
+                          color: AppColors.white,
+                          fontSize: 12,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ActionChip extends StatelessWidget {
   final String label;
   final IconData icon;
-  const _ActionChip({required this.label, required this.icon});
+  final VoidCallback? onTap;
+  const _ActionChip({required this.label, required this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
