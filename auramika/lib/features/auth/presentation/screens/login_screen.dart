@@ -137,6 +137,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: 'Email',
                     hint: 'your@email.com',
                     keyboardType: TextInputType.emailAddress,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Required';
+                      final ok = RegExp(r'^[\w\-.+]+@[\w-]+\.[a-zA-Z]{2,}$')
+                          .hasMatch(v.trim());
+                      return ok ? null : 'Enter a valid email address';
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildDateField(),
@@ -269,7 +275,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               context: context,
               initialDate: _selectedDob ?? DateTime(2000),
               firstDate: DateTime(1940),
-              lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
+              lastDate: DateTime.now().subtract(const Duration(days: 365 * 18 + 4)),
               builder: (context, child) => Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: const ColorScheme.light(
@@ -302,8 +308,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: AppColors.textMuted,
                 ),
               ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Please select your date of birth' : null,
+              validator: (_) {
+                if (_selectedDob == null) return 'Please select your date of birth';
+                final today = DateTime.now();
+                final age = today.year - _selectedDob!.year -
+                    ((today.month < _selectedDob!.month ||
+                            (today.month == _selectedDob!.month &&
+                                today.day < _selectedDob!.day))
+                        ? 1
+                        : 0);
+                return age >= 18 ? null : 'You must be 18 or older to register';
+              },
             ),
           ),
         ),

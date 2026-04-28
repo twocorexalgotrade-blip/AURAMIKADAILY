@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -44,6 +45,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String _saveAddressLabel = 'Home';
 
   bool _paying = false;
+  bool _pinLookingUp = false;
+  String? _pinError;
 
   @override
   void initState() {
@@ -52,16 +55,54 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     _nameCtrl.text = profile.name;
     _phoneCtrl.text = profile.phone.replaceAll(RegExp(r'[^\d]'), '').replaceFirst('91', '', 0);
     _isExpress = ref.read(cartProvider).isAllExpress;
+    _pinCtrl.addListener(_onPinChanged);
   }
 
   @override
   void dispose() {
+    _pinCtrl.removeListener(_onPinChanged);
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _line1Ctrl.dispose();
     _cityCtrl.dispose();
     _pinCtrl.dispose();
     super.dispose();
+  }
+
+  void _onPinChanged() {
+    final pin = _pinCtrl.text;
+    if (pin.length == 6) {
+      _lookupPinCode(pin);
+    } else if (_pinError != null) {
+      setState(() => _pinError = null);
+    }
+  }
+
+  Future<void> _lookupPinCode(String pin) async {
+    setState(() { _pinLookingUp = true; _pinError = null; });
+    try {
+      final res = await Dio().get(
+        'https://api.postalpincode.in/pincode/$pin',
+        options: Options(receiveTimeout: const Duration(seconds: 8)),
+      );
+      if (!mounted) return;
+      final list = res.data as List?;
+      if (list != null && list.isNotEmpty && list[0]['Status'] == 'Success') {
+        final offices = list[0]['PostOffice'] as List?;
+        if (offices != null && offices.isNotEmpty) {
+          final district = offices[0]['District'] as String? ?? '';
+          setState(() {
+            _cityCtrl.text = district;
+            _pinLookingUp = false;
+            _pinError = null;
+          });
+          return;
+        }
+      }
+      setState(() { _pinLookingUp = false; _pinError = 'Invalid PIN code'; });
+    } catch (_) {
+      if (mounted) setState(() => _pinLookingUp = false);
+    }
   }
 
   Future<void> _pay() async {
@@ -251,15 +292,50 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   _CheckoutField(controller: _line1Ctrl, label: 'ADDRESS',      hint: 'Flat / Street',   icon: Icons.home_outlined),
                   const SizedBox(height: AppConstants.paddingS),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _CheckoutField(controller: _cityCtrl, label: 'CITY', hint: 'Mumbai', icon: Icons.location_city_outlined)),
+                      Expanded(
+                        child: _CheckoutField(
+                          controller: _cityCtrl,
+                          label: 'CITY',
+                          hint: 'Auto-filled from PIN',
+                          icon: Icons.location_city_outlined,
+                          suffixIcon: _pinLookingUp
+                              ? const SizedBox(
+                                  width: 16, height: 16,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: AppColors.forestGreen,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
                       const SizedBox(width: AppConstants.paddingS),
                       SizedBox(
                         width: 110,
-                        child: _CheckoutField(controller: _pinCtrl, label: 'PIN CODE', hint: '400050', icon: Icons.pin_outlined, inputType: TextInputType.number, formatters: [FilteringTextInputFormatter.digitsOnly]),
+                        child: _CheckoutField(
+                          controller: _pinCtrl,
+                          label: 'PIN CODE',
+                          hint: '400050',
+                          icon: Icons.pin_outlined,
+                          inputType: TextInputType.number,
+                          formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                        ),
                       ),
                     ],
                   ),
+                  if (_pinError != null) ...[
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.error_outline_rounded, size: 12, color: AppColors.error),
+                      const SizedBox(width: 4),
+                      Text(_pinError!, style: AppTextStyles.bodySmall.copyWith(fontSize: 11, color: AppColors.error)),
+                    ]),
+                  ],
 
                   const SizedBox(height: AppConstants.paddingS),
 
@@ -515,6 +591,7 @@ class _CheckoutField extends StatelessWidget {
   final IconData icon;
   final TextInputType inputType;
   final List<TextInputFormatter>? formatters;
+  final Widget? suffixIcon;
 
   const _CheckoutField({
     required this.controller,
@@ -523,6 +600,7 @@ class _CheckoutField extends StatelessWidget {
     required this.icon,
     this.inputType = TextInputType.text,
     this.formatters,
+    this.suffixIcon,
   });
 
   @override
@@ -546,6 +624,7 @@ class _CheckoutField extends StatelessWidget {
             hintText: hint,
             hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
             prefixIcon: Icon(icon, size: 16, color: AppColors.textMuted),
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: AppColors.surface,
             contentPadding: const EdgeInsets.symmetric(

@@ -24,6 +24,7 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
   late final TextEditingController _dobCtrl;
   bool _saving = false;
   String _imagePath = '';
+  DateTime? _selectedDob;
 
   @override
   void initState() {
@@ -244,6 +245,12 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
               controller: _emailCtrl,
               icon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return null; // optional
+                final ok = RegExp(r'^[\w\-.+]+@[\w-]+\.[a-zA-Z]{2,}$')
+                    .hasMatch(v.trim());
+                return ok ? null : 'Enter a valid email address';
+              },
             ),
             const SizedBox(height: AppConstants.paddingM),
             _Field(
@@ -259,11 +266,12 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
               icon: Icons.cake_outlined,
               readOnly: true,
               onTap: () async {
+                final maxDate = DateTime.now().subtract(const Duration(days: 365 * 18 + 4));
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime(1995, 3, 12),
+                  initialDate: _selectedDob ?? DateTime(1995, 3, 12),
                   firstDate: DateTime(1950),
-                  lastDate: DateTime.now(),
+                  lastDate: maxDate,
                   builder: (ctx, child) => Theme(
                     data: Theme.of(ctx).copyWith(
                       colorScheme: const ColorScheme.light(
@@ -276,9 +284,21 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
                   ),
                 );
                 if (picked != null) {
+                  setState(() => _selectedDob = picked);
                   _dobCtrl.text =
                       '${picked.day} ${_monthName(picked.month)} ${picked.year}';
                 }
+              },
+              validator: (_) {
+                if (_selectedDob == null) return null; // DOB is optional here
+                final today = DateTime.now();
+                final age = today.year - _selectedDob!.year -
+                    ((today.month < _selectedDob!.month ||
+                            (today.month == _selectedDob!.month &&
+                                today.day < _selectedDob!.day))
+                        ? 1
+                        : 0);
+                return age >= 18 ? null : 'You must be 18 or older';
               },
             ),
             const SizedBox(height: AppConstants.paddingXL),
