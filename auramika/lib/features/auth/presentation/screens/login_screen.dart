@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   final bool isCreateAccount;
   final String? initialPhone;
   final bool alreadyExists;
+  final bool noAccount;
 
   const LoginScreen({
     super.key,
@@ -19,6 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
     this.isCreateAccount = false,
     this.initialPhone,
     this.alreadyExists = false,
+    this.noAccount = false,
   });
 
   @override
@@ -47,6 +50,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           SnackBar(
             content: Text(
               'This number is already registered. Please sign in instead.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
+            ),
+            backgroundColor: AppColors.terraCotta,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      });
+    }
+    if (widget.noAccount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No account found for this number. Please create an account first.',
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
             ),
             backgroundColor: AppColors.terraCotta,
@@ -182,6 +201,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                   ),
                 ),
+
+                if (widget.isCreateAccount) ...[
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text.rich(
+                      TextSpan(
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          height: 1.5,
+                        ),
+                        children: [
+                          const TextSpan(text: 'By creating an account you agree to our '),
+                          TextSpan(
+                            text: 'Terms & Conditions',
+                            style: const TextStyle(
+                              color: AppColors.forestGreen,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.forestGreen,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => context.push('/terms-conditions'),
+                          ),
+                          const TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: const TextStyle(
+                              color: AppColors.forestGreen,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.forestGreen,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => context.push('/privacy-policy'),
+                          ),
+                          const TextSpan(text: '.'),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 24),
                 Center(

@@ -1,51 +1,83 @@
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../constants/app_constants.dart';
 
-/// Wraps Cashfree REST API for order creation.
-///
-/// SECURITY NOTE: _secretKey must never ship in a production build.
-/// Move order creation to a backend endpoint and pass only
-/// payment_session_id to the app.
+class PaymentSessionResult {
+  final String orderId;
+  final String sessionId;
+  final double total;
+  final bool isTestMode;
+
+  const PaymentSessionResult({
+    required this.orderId,
+    required this.sessionId,
+    required this.total,
+    required this.isTestMode,
+  });
+}
+
 class CashfreeService {
-  static const _appId     = '12060982a633b3a49e76d91fb768906021';
-  static const _secretKey = 'cfsk_ma_prod_3811f21c4f21540a2727bddaelc2f2e6_253d91';
-  static const _baseUrl   = 'https://api.cashfree.com/pg';
-
-  // Expose appId so the SDK can be initialised elsewhere.
-  static String get appId => _appId;
-
   final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: AppConstants.connectTimeout,
+    receiveTimeout: AppConstants.receiveTimeout,
   ));
 
-  /// Creates a Cashfree order and returns the [paymentSessionId].
-  Future<String> createOrder({
-    required String orderId,
-    required double amount,
+  Future<String> _getIdToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Please sign in before placing an order.');
+    return user.getIdToken();
+  }
+
+  /// Creates a backend order and returns a Cashfree payment session.
+  /// The backend is the source of truth for the order amount.
+  Future<PaymentSessionResult> createOrderAndGetSession({
+    required List<Map<String, dynamic>> items,
+    required Map<String, String> address,
+    required bool isExpress,
     required String customerName,
     required String customerPhone,
-    String customerEmail = 'customer@auramika.in',
   }) async {
-    final response = await _dio.post(
-      '$_baseUrl/orders',
+    final token = await _getIdToken();
+    final authHeaders = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    // Step 1: Create order record in backend → get orderId + server-side total.
+    final orderRes = await _dio.post(
+      '${AppConstants.baseUrl}/api/v1/orders',
       data: {
-        'order_id':        orderId,
-        'order_amount':    amount,
-        'order_currency':  'INR',
-        'customer_details': {
-          'customer_id':    'CUST_$orderId',
-          'customer_name':  customerName,
-          'customer_email': customerEmail,
-          'customer_phone': customerPhone,
-        },
+        'items': items,
+        'address': address,
+        'isExpress': isExpress,
       },
-      options: Options(headers: {
-        'x-api-version':   '2023-08-01',
-        'x-client-id':     _appId,
-        'x-client-secret': _secretKey,
-        'Content-Type':    'application/json',
-      }),
+      options: Options(headers: authHeaders),
     );
-    return response.data['payment_session_id'] as String;
+
+    final orderId = orderRes.data['orderId'] as String;
+    final total = (orderRes.data['total'] as num).toDouble();
+
+    // Step 2: Ask backend to create a Cashfree order → get payment_session_id.
+    final paymentRes = await _dio.post(
+      '${AppConstants.baseUrl}/api/v1/payments/create-order',
+      data: {
+        'orderId': orderId,
+        'customerName': customerName.isNotEmpty ? customerName : 'Customer',
+        'customerPhone': customerPhone.isNotEmpty ? customerPhone : '9999999999',
+      },
+      options: Options(headers: authHeaders),
+    );
+
+    final sessionId = paymentRes.data['paymentSessionId'] as String?;
+    if (sessionId == null) throw Exception('No payment session ID returned from server.');
+
+    final isTestMode = (paymentRes.data['mode'] as String?) != 'PROD';
+
+    return PaymentSessionResult(
+      orderId: orderId,
+      sessionId: sessionId,
+      total: total,
+      isTestMode: isTestMode,
+    );
   }
 }

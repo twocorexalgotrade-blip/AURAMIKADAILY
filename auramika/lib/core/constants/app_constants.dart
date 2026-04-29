@@ -21,10 +21,16 @@ abstract class AppConstants {
   // ── Material Types ────────────────────────────────────────────────────────
   static const List<String> materialTypes = ['All', 'Brass', 'Copper'];
 
+  // ── Website URLs ─────────────────────────────────────────────────────────
+  static const String websiteBase       = 'https://auramika.in';
+  static const String urlPrivacyPolicy  = 'https://auramika.in/privacy.html';
+  static const String urlTerms          = 'https://auramika.in/terms.html';
+  static const String urlRefundPolicy   = 'https://auramika.in/refund-policy.html';
+  static const String urlShippingPolicy = 'https://auramika.in/shipping-policy.html';
+
   // ── API ───────────────────────────────────────────────────────────────────
-  // Switch to 'https://api.auramika.com' before production release.
-  // Android emulator reaches host machine via 10.0.2.2; iOS sim uses localhost.
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  // Update to your Render backend URL (Render dashboard → service → URL).
+  static const String baseUrl = 'https://auramika-app-backend.onrender.com';
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
 

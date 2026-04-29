@@ -135,28 +135,28 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     try {
       final result =
           await FirebaseAuth.instance.signInWithCredential(credential);
-      if (!mounted) return;
 
       final isNewUser = result.additionalUserInfo?.isNewUser ?? true;
       debugPrint('[OTP] signIn → success uid=${result.user?.uid} isNewUser=$isNewUser expectNewUser=${widget.expectNewUser}');
 
-      // Save registration data first — before any redirect — so Hive always
-      // has the name/email/dob regardless of whether Firebase treats this as
-      // a new or returning user (e.g. after account deletion Firebase may
-      // return isNewUser=false for the same phone number).
+      // Save registration data BEFORE checking mounted — Hive and Riverpod
+      // state do not require the widget to be attached. Doing this first
+      // ensures data is persisted even when Android auto-verifies the OTP
+      // while the user has already navigated away from the OTP screen.
       if (widget.expectNewUser) {
-        debugPrint('[OTP] signIn → saving registration data name="${widget.name}"');
+        debugPrint('[OTP] signIn → saving registration data name="${widget.name}" email="${widget.email}" phone="${widget.phone}" dob="${widget.dob}"');
         ref.read(userProfileProvider.notifier).update(
           name: widget.name,
           email: widget.email,
           phone: widget.phone,
           dob: widget.dob,
         );
+        debugPrint('[OTP] signIn → profile saved to Hive');
       }
 
+      if (!mounted) return;
+
       // Phone already had a live account — sign out and let them use sign-in.
-      // Profile data was already written to Hive above so loadFromAuth will
-      // pick it up when they sign in.
       if (widget.expectNewUser && !isNewUser) {
         debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
         await FirebaseAuth.instance.signOut();
@@ -165,6 +165,20 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           'redirect': widget.redirectPath,
           'phone': widget.phone,
           'alreadyExists': true,
+        });
+        return;
+      }
+
+      // Phone has no account (deleted or never registered) — block sign-in
+      // and redirect to create account instead.
+      if (!widget.expectNewUser && isNewUser) {
+        debugPrint('[OTP] signIn → no account found for phone, redirecting to register');
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        context.go('/auth/register', extra: {
+          'redirect': widget.redirectPath,
+          'phone': widget.phone,
+          'noAccount': true,
         });
         return;
       }

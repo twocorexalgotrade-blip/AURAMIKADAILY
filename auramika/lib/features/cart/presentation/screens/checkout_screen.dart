@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -240,9 +241,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final now   = DateTime.now();
       final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
-      final orderId = 'AUR${now.millisecondsSinceEpoch.toString().substring(7)}';
       final firstItem = cart.items.isNotEmpty ? cart.items.first : null;
-      final total = cart.subtotal + (_isExpress ? 0.0 : 49.0);
       final productName = firstItem != null
           ? (cart.items.length > 1
               ? '${firstItem.productName} & ${cart.items.length - 1} more'
@@ -250,26 +249,44 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           : 'Order';
 
       if (_payment == _PaymentMethod.cashfree || _payment == _PaymentMethod.card) {
-        // ── Online payment via Cashfree ──────────────────────────────
-        // Snapshot order details; SDK result callbacks will finalize.
-        _pendingOrderId    = orderId;
-        _pendingProductName = productName;
-        _pendingTotal      = total;
-        _pendingItemCount  = cart.totalItems;
-        _pendingImageAsset = firstItem?.imageUrl;
-        _pendingDate       = dateStr;
+        // ── Online payment via Cashfree (routed through backend) ─────
+        final backendItems = cart.items.map((i) => {
+          'productId': i.productId,
+          'productName': i.productName,
+          'brandName': i.brandName,
+          'price': i.price,
+          'quantity': i.quantity,
+          if (i.imageUrl != null) 'imageUrl': i.imageUrl!,
+        }).toList();
 
-        final sessionId = await _cashfreeService.createOrder(
-          orderId:       orderId,
-          amount:        total,
-          customerName:  _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'Customer',
-          customerPhone: _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : '9999999999',
+        final address = {
+          'name': _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'Customer',
+          'phone': _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : '9999999999',
+          'line1': _line1Ctrl.text.trim(),
+          'city': _cityCtrl.text.trim(),
+          'pincode': _pinCtrl.text.trim(),
+        };
+
+        final result = await _cashfreeService.createOrderAndGetSession(
+          items: backendItems,
+          address: address,
+          isExpress: _isExpress,
+          customerName: _nameCtrl.text.trim(),
+          customerPhone: _phoneCtrl.text.trim(),
         );
 
+        // Snapshot for SDK callbacks; total from backend is the source of truth.
+        _pendingOrderId     = result.orderId;
+        _pendingProductName = productName;
+        _pendingTotal       = result.total;
+        _pendingItemCount   = cart.totalItems;
+        _pendingImageAsset  = firstItem?.imageUrl;
+        _pendingDate        = dateStr;
+
         final session = CFSessionBuilder()
-            .setEnvironment(CFEnvironment.PRODUCTION)
-            .setPaymentSessionId(sessionId)
-            .setOrderId(orderId)
+            .setEnvironment(result.isTestMode ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION)
+            .setPaymentSessionId(result.sessionId)
+            .setOrderId(result.orderId)
             .build();
 
         final theme = CFThemeBuilder()
@@ -285,11 +302,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             .build();
 
         CFPaymentGatewayService().doPayment(webPayment);
-        // SDK takes over; result handled in onPaymentVerify / onError.
+        // SDK takes over; result handled in _onPaymentVerify / _onCashfreeError.
         return;
       }
 
-      // ── Offline: Cash Pay or COD ─────────────────────────────────
+      // ── COD ──────────────────────────────────────────────────────
+      final orderId = 'AUR${now.millisecondsSinceEpoch.toString().substring(7)}';
+      final total = cart.subtotal + (_isExpress ? 0.0 : 49.0);
       await Future.delayed(const Duration(milliseconds: 1800));
       if (!mounted) return;
       _finalizeOrder(orderId, productName, total, cart.totalItems, firstItem?.imageUrl, dateStr);
@@ -760,7 +779,63 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               AppConstants.paddingM, AppConstants.paddingM,
               AppConstants.paddingM, botPad + AppConstants.paddingM,
             ),
-            child: GestureDetector(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text.rich(
+                    TextSpan(
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                        height: 1.5,
+                      ),
+                      children: [
+                        const TextSpan(text: 'By placing this order you agree to our '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: GestureDetector(
+                            onTap: () => context.push('/terms-conditions'),
+                            child: Text(
+                              'Terms & Conditions',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontSize: 10,
+                                color: AppColors.forestGreen,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.forestGreen,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const TextSpan(text: ' and '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: GestureDetector(
+                            onTap: () async {
+                              final uri = Uri.parse(AppConstants.urlRefundPolicy);
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                            child: Text(
+                              'Refund Policy',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontSize: 10,
+                                color: AppColors.forestGreen,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.forestGreen,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                GestureDetector(
               onTap: cart.isEmpty || _paying ? null : _pay,
               child: AnimatedContainer(
                 duration: AppConstants.animFast,
@@ -800,6 +875,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                 ),
               ),
+            ),
+              ],
             ),
           ),
         ],
@@ -1015,7 +1092,7 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
 }
 
 // ── Payment Method ────────────────────────────────────────────────────────────
-enum _PaymentMethod { cashfree, card, cod }
+enum _PaymentMethod { cashfree, cod }
 
 class _PaymentSelector extends StatelessWidget {
   final _PaymentMethod selected;
@@ -1024,7 +1101,6 @@ class _PaymentSelector extends StatelessWidget {
 
   static const _options = [
     (_PaymentMethod.cashfree, 'Cashfree', 'UPI · Netbanking · Wallet',        Icons.account_balance_wallet_outlined),
-    (_PaymentMethod.card,     'Card Pay', 'Visa · Mastercard · RuPay · Amex', Icons.credit_card_outlined),
     (_PaymentMethod.cod,      'Cash on Delivery', 'Pay when delivered',        Icons.money_outlined),
   ];
 

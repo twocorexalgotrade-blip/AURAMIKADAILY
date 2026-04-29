@@ -56,7 +56,7 @@ class AppRoutes {
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
-    debugLogDiagnostics: false,
+    debugLogDiagnostics: true,
     routes: [
       // ── Shell (bottom nav) ────────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
@@ -202,6 +202,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return LoginScreen(
             redirectPath: extra?['redirect'] as String?,
             isCreateAccount: true,
+            initialPhone: extra?['phone'] as String?,
+            noAccount: extra?['noAccount'] as bool? ?? false,
           );
         },
       ),
