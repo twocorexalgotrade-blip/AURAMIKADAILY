@@ -20,6 +20,16 @@ class OrderModel {
     required this.status,
     required this.itemCount,
   });
+
+  OrderModel copyWith({OrderStatus? status}) => OrderModel(
+        id: id,
+        productName: productName,
+        imageAsset: imageAsset,
+        total: total,
+        date: date,
+        status: status ?? this.status,
+        itemCount: itemCount,
+      );
 }
 
 class OrdersNotifier extends Notifier<List<OrderModel>> {
@@ -28,6 +38,13 @@ class OrdersNotifier extends Notifier<List<OrderModel>> {
 
   void addOrder(OrderModel order) {
     state = [order, ...state];
+  }
+
+  void cancelOrder(String id) {
+    state = [
+      for (final o in state)
+        if (o.id == id) o.copyWith(status: OrderStatus.cancelled) else o,
+    ];
   }
 }
 

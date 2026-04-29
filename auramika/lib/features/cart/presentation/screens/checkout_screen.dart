@@ -1,3 +1,9 @@
+import 'package:flutter_cashfree_pg_sdk/api/cferrorresponse/cferrorresponse.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpayment/cfwebcheckoutpayment.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpaymentgateway/cfpaymentgatewayservice.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfsession/cfsession.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cftheme/cftheme.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +14,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/cashfree_service.dart';
 import '../../../../shared/widgets/rive_animation_widget.dart';
 import '../../../profile/domain/orders_controller.dart';
 import '../../../profile/domain/user_profile_controller.dart';
@@ -32,7 +39,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _pinCtrl     = TextEditingController();
 
   // Payment
-  _PaymentMethod _payment = _PaymentMethod.cash;
+  _PaymentMethod _payment = _PaymentMethod.cashfree;
 
   // Delivery — user can override; initialised from cart in initState
   bool _isExpress = false;
@@ -48,6 +55,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   bool _pinLookingUp = false;
   String? _pinError;
 
+  final _cashfreeService = CashfreeService();
+  // Holds snapshot data while Cashfree SDK is active
+  String? _pendingOrderId;
+  String? _pendingProductName;
+  double? _pendingTotal;
+  int?    _pendingItemCount;
+  String? _pendingImageAsset;
+  String? _pendingDate;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +72,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     _phoneCtrl.text = profile.phone.replaceAll(RegExp(r'[^\d]'), '').replaceFirst('91', '', 0);
     _isExpress = ref.read(cartProvider).isAllExpress;
     _pinCtrl.addListener(_onPinChanged);
+
+    // Register Cashfree result callbacks
+    CFPaymentGatewayService().setCallback(_onPaymentVerify, _onCashfreeError);
   }
 
   @override
@@ -108,48 +127,130 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _pay() async {
     setState(() => _paying = true);
     try {
-      // Snapshot cart before clearing
-      final cart = ref.read(cartProvider);
-      final now = DateTime.now();
+      final cart  = ref.read(cartProvider);
+      final now   = DateTime.now();
       final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
       final orderId = 'AUR${now.millisecondsSinceEpoch.toString().substring(7)}';
       final firstItem = cart.items.isNotEmpty ? cart.items.first : null;
+      final total = cart.subtotal + (_isExpress ? 0.0 : 49.0);
+      final productName = firstItem != null
+          ? (cart.items.length > 1
+              ? '${firstItem.productName} & ${cart.items.length - 1} more'
+              : firstItem.productName)
+          : 'Order';
 
-      await Future.delayed(const Duration(milliseconds: 1800));
-      if (!mounted) return;
+      if (_payment == _PaymentMethod.cashfree) {
+        // ── Online payment via Cashfree ──────────────────────────────
+        // Snapshot order details; SDK result callbacks will finalize.
+        _pendingOrderId    = orderId;
+        _pendingProductName = productName;
+        _pendingTotal      = total;
+        _pendingItemCount  = cart.totalItems;
+        _pendingImageAsset = firstItem?.imageUrl;
+        _pendingDate       = dateStr;
 
-      // Save order to provider
-      ref.read(ordersProvider.notifier).addOrder(OrderModel(
-        id: orderId,
-        productName: firstItem != null
-            ? (cart.items.length > 1
-                ? '${firstItem.productName} & ${cart.items.length - 1} more'
-                : firstItem.productName)
-            : 'Order',
-        imageAsset: firstItem?.imageUrl,
-        total: cart.subtotal + (_isExpress ? 0.0 : 49.0),
-        date: dateStr,
-        status: OrderStatus.processing,
-        itemCount: cart.totalItems,
-      ));
+        final sessionId = await _cashfreeService.createOrder(
+          orderId:       orderId,
+          amount:        total,
+          customerName:  _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'Customer',
+          customerPhone: _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : '9999999999',
+        );
 
-      // Save address to profile if requested
-      if (_saveAddressToProfile && _line1Ctrl.text.trim().isNotEmpty) {
-        ref.read(userProfileProvider.notifier).addAddress(Address(
-          label: _saveAddressLabel,
-          line1: _line1Ctrl.text.trim(),
-          city: _cityCtrl.text.trim(),
-          pinCode: _pinCtrl.text.trim(),
-        ));
+        final session = CFSessionBuilder()
+            .setEnvironment(CFEnvironment.PRODUCTION)
+            .setPaymentSessionId(sessionId)
+            .setOrderId(orderId)
+            .build();
+
+        final theme = CFThemeBuilder()
+            .setNavigationBarBackgroundColorColor('#2D6A4F')
+            .setNavigationBarTextColor('#FFFFFF')
+            .setButtonBackgroundColor('#2D6A4F')
+            .setButtonTextColor('#FFFFFF')
+            .build();
+
+        final webPayment = CFWebCheckoutPaymentBuilder()
+            .setSession(session)
+            .setTheme(theme)
+            .build();
+
+        CFPaymentGatewayService().doPayment(webPayment);
+        // SDK takes over; result handled in onPaymentVerify / onError.
+        return;
       }
 
-      ref.read(cartProvider.notifier).clear();
+      // ── Offline: Cash Pay or COD ─────────────────────────────────
+      await Future.delayed(const Duration(milliseconds: 1800));
       if (!mounted) return;
-      context.pushReplacement(AppRoutes.orderConfirmation);
+      _finalizeOrder(orderId, productName, total, cart.totalItems, firstItem?.imageUrl, dateStr);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Payment failed: $e'),
+          backgroundColor: AppColors.terraCotta,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
     } finally {
       if (mounted) setState(() => _paying = false);
     }
+  }
+
+  void _finalizeOrder(
+    String orderId,
+    String productName,
+    double total,
+    int itemCount,
+    String? imageAsset,
+    String date,
+  ) {
+    ref.read(ordersProvider.notifier).addOrder(OrderModel(
+      id:          orderId,
+      productName: productName,
+      imageAsset:  imageAsset,
+      total:       total,
+      date:        date,
+      status:      OrderStatus.processing,
+      itemCount:   itemCount,
+    ));
+
+    if (_saveAddressToProfile && _line1Ctrl.text.trim().isNotEmpty) {
+      ref.read(userProfileProvider.notifier).addAddress(Address(
+        label:   _saveAddressLabel,
+        line1:   _line1Ctrl.text.trim(),
+        city:    _cityCtrl.text.trim(),
+        pinCode: _pinCtrl.text.trim(),
+      ));
+    }
+
+    ref.read(cartProvider.notifier).clear();
+    if (mounted) context.pushReplacement(AppRoutes.orderConfirmation);
+  }
+
+  // ── Cashfree SDK callbacks ────────────────────────────────────────────────
+
+  void _onPaymentVerify(String orderId) {
+    if (!mounted) return;
+    setState(() => _paying = false);
+    _finalizeOrder(
+      _pendingOrderId     ?? orderId,
+      _pendingProductName ?? 'Order',
+      _pendingTotal       ?? 0,
+      _pendingItemCount   ?? 1,
+      _pendingImageAsset,
+      _pendingDate        ?? '',
+    );
+  }
+
+  void _onCashfreeError(CFErrorResponse errorResponse, String orderId) {
+    if (!mounted) return;
+    setState(() => _paying = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(errorResponse.getMessage() ?? 'Payment failed'),
+      backgroundColor: AppColors.terraCotta,
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
   void _selectSavedAddress(int index, Address addr) {
@@ -767,7 +868,7 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
 }
 
 // ── Payment Method ────────────────────────────────────────────────────────────
-enum _PaymentMethod { cash, cod, upi }
+enum _PaymentMethod { cashfree, cod, cash }
 
 class _PaymentSelector extends StatelessWidget {
   final _PaymentMethod selected;
@@ -775,9 +876,9 @@ class _PaymentSelector extends StatelessWidget {
   const _PaymentSelector({required this.selected, required this.onChanged});
 
   static const _options = [
-    (_PaymentMethod.cash, 'Cash Pay', 'Pay with cash at pickup',     Icons.payments_outlined),
-    (_PaymentMethod.upi,  'UPI',      'GPay, PhonePe, Paytm',        Icons.qr_code_outlined),
-    (_PaymentMethod.cod,  'Cash on Delivery', 'Pay when delivered',  Icons.money_outlined),
+    (_PaymentMethod.cashfree, 'Cashfree', 'Card · UPI · Netbanking · Wallet', Icons.credit_card_outlined),
+    (_PaymentMethod.cod,      'Cash on Delivery', 'Pay when delivered',        Icons.money_outlined),
+    (_PaymentMethod.cash,     'Cash Pay', 'Pay with cash at pickup',           Icons.payments_outlined),
   ];
 
   @override

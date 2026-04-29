@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Auramika Daily"
         android:name="${applicationName}"
@@ -6,7 +7,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -53,5 +54,13 @@
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="mailto"/>
         </intent>
+        <!-- Cashfree: UPI intent apps (GPay, PhonePe, Paytm, etc.) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="upi"/>
+        </intent>
+        <package android:name="com.google.android.apps.nbu.paisa.user"/>
+        <package android:name="net.one97.paytm"/>
+        <package android:name="com.phonepe.app"/>
     </queries>
 </manifest>

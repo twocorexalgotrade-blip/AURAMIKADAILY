@@ -44,13 +44,13 @@ class OrdersScreen extends ConsumerWidget {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends ConsumerWidget {
   final OrderModel order;
   final int index;
   const _OrderCard({required this.order, required this.index});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final (statusLabel, statusColor) = switch (order.status) {
       OrderStatus.delivered  => ('Delivered', const Color(0xFF2E7D32)),
       OrderStatus.inTransit  => ('In Transit', AppColors.brass),
@@ -160,8 +160,31 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ] else if (order.status == OrderStatus.inTransit) ...[
                   _ActionChip(label: 'Track Order', icon: Icons.local_shipping_outlined),
+                  const SizedBox(width: 8),
+                  _ActionChip(
+                    label: 'View Details',
+                    icon: Icons.info_outline_rounded,
+                    onTap: () => _showDetailsSheet(context, order),
+                  ),
+                ] else if (order.status == OrderStatus.processing) ...[
+                  _ActionChip(
+                    label: 'View Details',
+                    icon: Icons.info_outline_rounded,
+                    onTap: () => _showDetailsSheet(context, order),
+                  ),
+                  const SizedBox(width: 8),
+                  _ActionChip(
+                    label: 'Cancel Order',
+                    icon: Icons.cancel_outlined,
+                    isDestructive: true,
+                    onTap: () => _showCancelConfirm(context, ref, order),
+                  ),
                 ] else ...[
-                  _ActionChip(label: 'View Details', icon: Icons.info_outline_rounded),
+                  _ActionChip(
+                    label: 'View Details',
+                    icon: Icons.info_outline_rounded,
+                    onTap: () => _showDetailsSheet(context, order),
+                  ),
                 ],
               ],
             ),
@@ -181,6 +204,138 @@ class _OrderCard extends StatelessWidget {
         child: const Icon(Icons.diamond_outlined,
             color: AppColors.gold, size: 24),
       );
+
+  static void _showDetailsSheet(BuildContext context, OrderModel order) {
+    final (statusLabel, statusColor) = switch (order.status) {
+      OrderStatus.delivered  => ('Delivered', const Color(0xFF2E7D32)),
+      OrderStatus.inTransit  => ('In Transit', AppColors.brass),
+      OrderStatus.processing => ('Processing', AppColors.forestGreen),
+      OrderStatus.cancelled  => ('Cancelled', AppColors.terraCotta),
+    };
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.paddingM, 0,
+            AppConstants.paddingM, AppConstants.paddingM,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('ORDER DETAILS',
+                      style: AppTextStyles.categoryChip
+                          .copyWith(fontSize: 10, letterSpacing: 2.5)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 9, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusXS),
+                    ),
+                    child: Text(statusLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                            fontSize: 10,
+                            color: statusColor,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: AppColors.divider, thickness: 0.5),
+              const SizedBox(height: 14),
+              _DetailRow(label: 'Order ID', value: order.id),
+              const SizedBox(height: 10),
+              _DetailRow(label: 'Product', value: order.productName),
+              const SizedBox(height: 10),
+              _DetailRow(label: 'Date', value: order.date),
+              const SizedBox(height: 10),
+              _DetailRow(
+                  label: 'Items',
+                  value:
+                      '${order.itemCount} item${order.itemCount > 1 ? 's' : ''}'),
+              const SizedBox(height: 10),
+              _DetailRow(
+                  label: 'Total',
+                  value: '₹${order.total.toStringAsFixed(0)}',
+                  bold: true),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _showCancelConfirm(
+      BuildContext context, WidgetRef ref, OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.background,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusM)),
+        title: Text('Cancel Order?',
+            style: AppTextStyles.headlineMedium.copyWith(fontSize: 17)),
+        content: Text(
+          'Are you sure you want to cancel ${order.productName}? This cannot be undone.',
+          style: AppTextStyles.bodyMedium
+              .copyWith(fontSize: 13, color: AppColors.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Keep Order',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.forestGreen, fontSize: 13)),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(ordersProvider.notifier).cancelOrder(order.id);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Order ${order.id} has been cancelled.',
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.white)),
+                  backgroundColor: AppColors.terraCotta,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusXS)),
+                ),
+              );
+            },
+            child: Text('Cancel Order',
+                style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.terraCotta,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
 
   static void _showRefundSheet(BuildContext context, OrderModel order) {
     String? selectedReason;
@@ -332,29 +487,70 @@ class _ActionChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback? onTap;
-  const _ActionChip({required this.label, required this.icon, this.onTap});
+  final bool isDestructive;
+
+  const _ActionChip({
+    required this.label,
+    required this.icon,
+    this.onTap,
+    this.isDestructive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final color = isDestructive ? AppColors.terraCotta : AppColors.forestGreen;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.divider, width: 0.5),
+          color: isDestructive
+              ? AppColors.terraCotta.withValues(alpha: 0.06)
+              : Colors.transparent,
+          border: Border.all(
+              color: isDestructive ? AppColors.terraCotta : AppColors.divider,
+              width: 0.8),
           borderRadius: BorderRadius.circular(AppConstants.radiusXS),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: AppColors.forestGreen),
+            Icon(icon, size: 13, color: color),
             const SizedBox(width: 4),
             Text(label,
-                style: AppTextStyles.bodySmall
-                    .copyWith(fontSize: 11, color: AppColors.textSecondary)),
+                style: AppTextStyles.bodySmall.copyWith(
+                    fontSize: 11,
+                    color: isDestructive
+                        ? AppColors.terraCotta
+                        : AppColors.textSecondary)),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool bold;
+  const _DetailRow({required this.label, required this.value, this.bold = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: AppTextStyles.bodySmall
+                .copyWith(fontSize: 12, color: AppColors.textMuted)),
+        Text(value,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 12,
+              color: AppColors.textPrimary,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+            )),
+      ],
     );
   }
 }
