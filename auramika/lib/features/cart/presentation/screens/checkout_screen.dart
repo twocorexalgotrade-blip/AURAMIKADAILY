@@ -140,7 +140,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               : firstItem.productName)
           : 'Order';
 
-      if (_payment == _PaymentMethod.cashfree) {
+      if (_payment == _PaymentMethod.cashfree || _payment == _PaymentMethod.card) {
         // ── Online payment via Cashfree ──────────────────────────────
         // Snapshot order details; SDK result callbacks will finalize.
         _pendingOrderId    = orderId;
@@ -640,7 +640,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               const SizedBox(width: 6),
                             ],
                             Text(
-                              (_payment == _PaymentMethod.cod || _payment == _PaymentMethod.cash)
+                              _payment == _PaymentMethod.cod
                                   ? 'PLACE ORDER · ₹${total.toInt()}'
                                   : 'PAY ₹${total.toInt()}',
                               style: AppTextStyles.categoryChip.copyWith(
@@ -868,7 +868,7 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
 }
 
 // ── Payment Method ────────────────────────────────────────────────────────────
-enum _PaymentMethod { cashfree, cod, cash }
+enum _PaymentMethod { cashfree, card, cod }
 
 class _PaymentSelector extends StatelessWidget {
   final _PaymentMethod selected;
@@ -876,9 +876,9 @@ class _PaymentSelector extends StatelessWidget {
   const _PaymentSelector({required this.selected, required this.onChanged});
 
   static const _options = [
-    (_PaymentMethod.cashfree, 'Cashfree', 'Card · UPI · Netbanking · Wallet', Icons.credit_card_outlined),
+    (_PaymentMethod.cashfree, 'Cashfree', 'UPI · Netbanking · Wallet',        Icons.account_balance_wallet_outlined),
+    (_PaymentMethod.card,     'Card Pay', 'Visa · Mastercard · RuPay · Amex', Icons.credit_card_outlined),
     (_PaymentMethod.cod,      'Cash on Delivery', 'Pay when delivered',        Icons.money_outlined),
-    (_PaymentMethod.cash,     'Cash Pay', 'Pay with cash at pickup',           Icons.payments_outlined),
   ];
 
   @override
