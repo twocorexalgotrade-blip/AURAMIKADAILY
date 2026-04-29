@@ -231,26 +231,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   // ── Cashfree SDK callbacks ────────────────────────────────────────────────
 
   void _onPaymentVerify(String orderId) {
-    if (!mounted) return;
-    setState(() => _paying = false);
-    _finalizeOrder(
-      _pendingOrderId     ?? orderId,
-      _pendingProductName ?? 'Order',
-      _pendingTotal       ?? 0,
-      _pendingItemCount   ?? 1,
-      _pendingImageAsset,
-      _pendingDate        ?? '',
-    );
+    // Defer to next frame — Cashfree callbacks fire as the native screen unwinds
+    // and the Flutter context is not yet fully resumed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _paying = false);
+      _finalizeOrder(
+        _pendingOrderId     ?? orderId,
+        _pendingProductName ?? 'Order',
+        _pendingTotal       ?? 0,
+        _pendingItemCount   ?? 1,
+        _pendingImageAsset,
+        _pendingDate        ?? '',
+      );
+    });
   }
 
   void _onCashfreeError(CFErrorResponse errorResponse, String orderId) {
-    if (!mounted) return;
-    setState(() => _paying = false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(errorResponse.getMessage() ?? 'Payment failed'),
-      backgroundColor: AppColors.terraCotta,
-      behavior: SnackBarBehavior.floating,
-    ));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _paying = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errorResponse.getMessage() ?? 'Payment failed'),
+        backgroundColor: AppColors.terraCotta,
+        behavior: SnackBarBehavior.floating,
+      ));
+    });
   }
 
   void _selectSavedAddress(int index, Address addr) {
