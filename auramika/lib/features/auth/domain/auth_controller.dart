@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,23 +15,28 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  StreamSubscription<User?>? _sub;
+
   AuthNotifier() : super(const AuthState()) {
-    _init();
+    _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      state = user != null
+          ? AuthState(isLoggedIn: true, userId: user.uid)
+          : const AuthState();
+    });
   }
 
-  void _init() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      state = AuthState(isLoggedIn: true, userId: user.uid);
-    }
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 
   void login(String userId) {
     state = AuthState(isLoggedIn: true, userId: userId);
   }
 
-  void logout() {
-    FirebaseAuth.instance.signOut();
+  Future<void> logout() async {
+    await FirebaseAuth.instance.signOut();
     state = const AuthState();
   }
 }

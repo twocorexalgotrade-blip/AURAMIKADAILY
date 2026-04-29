@@ -8,6 +8,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/widgets/auramika_app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/domain/auth_controller.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../domain/user_profile_controller.dart';
 import '../../domain/wishlist_controller.dart';
 import 'profile_details_screen.dart';
@@ -308,6 +309,8 @@ class ProfileScreen extends ConsumerWidget {
               }
               ref.read(authProvider.notifier).logout();
               ref.read(userProfileProvider.notifier).reset();
+              ref.read(cartProvider.notifier).clear();
+              ref.read(wishlistProvider.notifier).clear();
               if (context.mounted) context.go('/');
             },
             child: Text('Delete',
@@ -339,6 +342,8 @@ class ProfileScreen extends ConsumerWidget {
               Navigator.pop(context);
               ref.read(authProvider.notifier).logout();
               ref.read(userProfileProvider.notifier).clearState();
+              ref.read(cartProvider.notifier).clear();
+              ref.read(wishlistProvider.notifier).clear();
               context.go('/');
             },
             child: Text('Sign Out',

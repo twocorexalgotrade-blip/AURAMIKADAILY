@@ -43,6 +43,10 @@ class WishlistController extends StateNotifier<WishlistState> {
       state = state.copyWith(items: [...state.items, item]);
     }
   }
+
+  void clear() {
+    state = const WishlistState();
+  }
 }
 
 final wishlistProvider =

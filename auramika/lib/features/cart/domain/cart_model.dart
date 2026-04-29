@@ -64,6 +64,7 @@ final mockCartState = CartState(
       price: 1299,
       material: 'Brass',
       size: 'M',
+      imageUrl: 'assets/images/products/p1_brass_cuff.png',
       isExpressAvailable: true,
     ),
     CartItem(
@@ -73,6 +74,7 @@ final mockCartState = CartState(
       productName: 'Copper Pearl Drop',
       price: 949,
       material: 'Copper',
+      imageUrl: 'assets/images/products/p2_copper_pearl.png',
       isExpressAvailable: true,
     ),
     CartItem(
@@ -82,6 +84,7 @@ final mockCartState = CartState(
       productName: 'Minimalist Brass Bar',
       price: 699,
       material: 'Brass',
+      imageUrl: 'assets/images/products/p3_brass_chain.png',
       isExpressAvailable: true,
     ),
   ],
