@@ -152,11 +152,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         return;
       }
 
-      // 3. Fetch position with a 15-second timeout
+      // 3. Fetch position (15-second native timeout via LocationSettings)
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: AndroidSettings(
+        locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 15),
+          timeLimit: Duration(seconds: 15),
         ),
       );
 
@@ -189,10 +189,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         if (city.isNotEmpty)     _cityCtrl.text  = city;
         if (pinCode.length == 6) _pinCtrl.text   = pinCode;
       });
-    } on TimeoutException {
-      if (mounted) _showLocationSnackBar('Location timed out. Check your GPS signal and try again.');
     } catch (e) {
-      if (mounted) _showLocationSnackBar('Could not fetch location: ${e.toString().split('\n').first}');
+      if (mounted) {
+        final msg = e.toString().toLowerCase().contains('timeout')
+            ? 'Location timed out. Check your GPS signal and try again.'
+            : 'Could not get location: ${e.toString().split('\n').first}';
+        _showLocationSnackBar(msg);
+      }
     } finally {
       if (mounted) setState(() => _locating = false);
     }
