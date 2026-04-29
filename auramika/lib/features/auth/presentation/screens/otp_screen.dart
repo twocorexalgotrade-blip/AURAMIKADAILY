@@ -140,6 +140,23 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       final isNewUser = result.additionalUserInfo?.isNewUser ?? true;
       debugPrint('[OTP] signIn → success uid=${result.user?.uid} isNewUser=$isNewUser expectNewUser=${widget.expectNewUser}');
 
+      // Save registration data first — before any redirect — so Hive always
+      // has the name/email/dob regardless of whether Firebase treats this as
+      // a new or returning user (e.g. after account deletion Firebase may
+      // return isNewUser=false for the same phone number).
+      if (widget.expectNewUser) {
+        debugPrint('[OTP] signIn → saving registration data name="${widget.name}"');
+        ref.read(userProfileProvider.notifier).update(
+          name: widget.name,
+          email: widget.email,
+          phone: widget.phone,
+          dob: widget.dob,
+        );
+      }
+
+      // Phone already had a live account — sign out and let them use sign-in.
+      // Profile data was already written to Hive above so loadFromAuth will
+      // pick it up when they sign in.
       if (widget.expectNewUser && !isNewUser) {
         debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
         await FirebaseAuth.instance.signOut();
@@ -154,15 +171,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
       ref.read(authProvider.notifier).login(result.user?.uid ?? widget.phone);
 
-      if (widget.expectNewUser) {
-        debugPrint('[OTP] signIn → new account, saving registration data');
-        ref.read(userProfileProvider.notifier).update(
-              name: widget.name,
-              email: widget.email,
-              phone: widget.phone,
-              dob: widget.dob,
-            );
-      } else {
+      if (!widget.expectNewUser) {
         debugPrint('[OTP] signIn → returning user, loading profile from Hive');
         ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
       }
