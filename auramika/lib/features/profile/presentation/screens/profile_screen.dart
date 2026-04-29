@@ -311,7 +311,7 @@ class ProfileScreen extends ConsumerWidget {
               ref.read(userProfileProvider.notifier).reset();
               ref.read(cartProvider.notifier).clear();
               ref.read(wishlistProvider.notifier).clear();
-              if (context.mounted) context.go('/auth/register');
+              if (context.mounted) context.push('/auth/register');
             },
             child: Text('Delete',
                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
