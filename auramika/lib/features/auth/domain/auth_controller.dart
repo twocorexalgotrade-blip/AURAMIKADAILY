@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthState {
@@ -19,6 +20,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier() : super(const AuthState()) {
     _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      debugPrint('[Auth] authStateChanges → user=${user?.uid ?? 'null'}');
       state = user != null
           ? AuthState(isLoggedIn: true, userId: user.uid)
           : const AuthState();
@@ -32,12 +34,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void login(String userId) {
+    debugPrint('[Auth] login → userId=$userId');
     state = AuthState(isLoggedIn: true, userId: userId);
   }
 
   Future<void> logout() async {
+    debugPrint('[Auth] logout → signing out userId=${state.userId}');
     await FirebaseAuth.instance.signOut();
     state = const AuthState();
+    debugPrint('[Auth] logout → complete');
   }
 }
 

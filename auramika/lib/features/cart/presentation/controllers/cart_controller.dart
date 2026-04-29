@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/cart_model.dart';
 
@@ -8,34 +9,39 @@ class CartController extends StateNotifier<CartState> {
   /// Add item to cart - increments quantity if already exists
   void addItem(CartItem item) {
     final existingIndex = state.items.indexWhere((i) => i.productId == item.productId);
-    
+
     if (existingIndex != -1) {
-      // Item exists - increment quantity
       final updatedItems = [...state.items];
+      final prev = updatedItems[existingIndex];
+      debugPrint('[Cart] addItem → qty++ for productId=${item.productId} name="${item.productName}" qty=${prev.quantity}→${prev.quantity + 1}');
       updatedItems[existingIndex] = CartItem(
-        id: updatedItems[existingIndex].id,
-        productId: updatedItems[existingIndex].productId,
-        brandName: updatedItems[existingIndex].brandName,
-        productName: updatedItems[existingIndex].productName,
-        price: updatedItems[existingIndex].price,
-        material: updatedItems[existingIndex].material,
-        size: updatedItems[existingIndex].size,
-        imageUrl: updatedItems[existingIndex].imageUrl,
-        isExpressAvailable: updatedItems[existingIndex].isExpressAvailable,
-        quantity: updatedItems[existingIndex].quantity + 1,
+        id: prev.id,
+        productId: prev.productId,
+        brandName: prev.brandName,
+        productName: prev.productName,
+        price: prev.price,
+        material: prev.material,
+        size: prev.size,
+        imageUrl: prev.imageUrl,
+        isExpressAvailable: prev.isExpressAvailable,
+        quantity: prev.quantity + 1,
       );
       state = state.copyWith(items: updatedItems);
     } else {
-      // New item - add to cart
+      debugPrint('[Cart] addItem → new item productId=${item.productId} name="${item.productName}" price=${item.price}');
       state = state.copyWith(items: [...state.items, item]);
     }
+    debugPrint('[Cart] totalItems=${state.totalItems} subtotal=${state.subtotal}');
   }
 
   /// Remove item from cart by ID
   void removeItem(String id) {
+    final item = state.items.firstWhere((i) => i.id == id, orElse: () => state.items.first);
+    debugPrint('[Cart] removeItem → id=$id name="${item.productName}"');
     state = state.copyWith(
       items: state.items.where((i) => i.id != id).toList(),
     );
+    debugPrint('[Cart] totalItems=${state.totalItems} subtotal=${state.subtotal}');
   }
 
   /// Update quantity - increment or decrement
@@ -43,6 +49,7 @@ class CartController extends StateNotifier<CartState> {
     final updatedItems = state.items.map((item) {
       if (item.id == id) {
         final newQty = (item.quantity + delta).clamp(1, 10);
+        debugPrint('[Cart] updateQty → id=$id name="${item.productName}" qty=${item.quantity}→$newQty');
         return CartItem(
           id: item.id,
           productId: item.productId,
@@ -63,6 +70,7 @@ class CartController extends StateNotifier<CartState> {
 
   /// Clear all items from cart (after successful checkout)
   void clear() {
+    debugPrint('[Cart] clear → removing ${state.totalItems} items');
     state = const CartState();
   }
 }

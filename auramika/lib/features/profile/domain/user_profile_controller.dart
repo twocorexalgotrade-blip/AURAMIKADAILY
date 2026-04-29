@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -95,6 +96,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       imagePath: box.get('imagePath', defaultValue: '') as String,
       addresses: _readAddresses(box),
     );
+    debugPrint('[Profile] _load → name="${state.name}" phone="${state.phone}" addresses=${state.addresses.length}');
   }
 
   List<Address> _readAddresses(Box box) {
@@ -117,6 +119,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
   // Re-reads Hive into state AND always sets phone from the auth session.
   void loadFromAuth(String phone) {
+    debugPrint('[Profile] loadFromAuth → phone=$phone');
     final box = Hive.box(_boxName);
     state = UserProfile(
       name: box.get('name', defaultValue: '') as String,
@@ -127,6 +130,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       addresses: _readAddresses(box),
     );
     box.put('phone', phone);
+    debugPrint('[Profile] loadFromAuth → complete name="${state.name}" addresses=${state.addresses.length}');
   }
 
   void reload() => _load();
@@ -138,6 +142,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     String? dob,
     String? imagePath,
   }) {
+    debugPrint('[Profile] update → name=$name email=$email phone=$phone dob=$dob');
     state = state.copyWith(
       name: name,
       email: email,
@@ -154,31 +159,35 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   }
 
   void addAddress(Address address) {
+    debugPrint('[Profile] addAddress → label="${address.label}" city="${address.city}"');
     final updated = [...state.addresses, address];
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
+    debugPrint('[Profile] addresses count=${updated.length}');
   }
 
   void updateAddress(int index, Address address) {
+    debugPrint('[Profile] updateAddress → index=$index label="${address.label}"');
     final updated = [...state.addresses]..[index] = address;
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
   }
 
   void removeAddress(int index) {
+    debugPrint('[Profile] removeAddress → index=$index label="${state.addresses[index].label}"');
     final updated = [...state.addresses]..removeAt(index);
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
+    debugPrint('[Profile] addresses count=${updated.length}');
   }
 
-  // Clears in-memory state only — Hive is kept so the profile reloads on
-  // the next sign-in without a backend round-trip.
   void clearState() {
+    debugPrint('[Profile] clearState → in-memory wipe (Hive retained)');
     state = const UserProfile();
   }
 
-  // Full wipe — used on account deletion only.
   void reset() {
+    debugPrint('[Profile] reset → full wipe including Hive');
     state = const UserProfile();
     Hive.box(_boxName).clear();
   }

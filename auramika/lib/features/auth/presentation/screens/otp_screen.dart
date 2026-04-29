@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -57,6 +58,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _sendOtp() async {
+    debugPrint('[OTP] sendOtp → phone=${widget.phone} expectNewUser=${widget.expectNewUser}');
     setState(() {
       _sending = true;
       _error = null;
@@ -65,9 +67,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       phoneNumber: widget.phone,
       timeout: const Duration(seconds: 60),
       verificationCompleted: (PhoneAuthCredential credential) async {
+        debugPrint('[OTP] verificationCompleted → auto-sign-in');
         await _signIn(credential);
       },
       verificationFailed: (FirebaseAuthException e) {
+        debugPrint('[OTP] verificationFailed → code=${e.code} message=${e.message}');
         if (mounted) {
           setState(() {
             _sending = false;
@@ -76,6 +80,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         }
       },
       codeSent: (String verificationId, int? resendToken) {
+        debugPrint('[OTP] codeSent → verificationId=$verificationId resendToken=$resendToken');
         if (mounted) {
           setState(() {
             _verificationId = verificationId;
@@ -85,6 +90,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         }
       },
       codeAutoRetrievalTimeout: (String verificationId) {
+        debugPrint('[OTP] codeAutoRetrievalTimeout → verificationId=$verificationId');
         if (mounted) setState(() => _verificationId = verificationId);
       },
     );
@@ -100,6 +106,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final otp = _ctls.map((c) => c.text).join();
     if (otp.length < 6 || _verificationId == null) return;
 
+    debugPrint('[OTP] verify → submitting code for phone=${widget.phone}');
     setState(() {
       _verifying = true;
       _error = null;
@@ -112,6 +119,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       );
       await _signIn(credential);
     } on FirebaseAuthException catch (e) {
+      debugPrint('[OTP] verify failed → code=${e.code} message=${e.message}');
       if (mounted) {
         _clearBoxes();
         setState(() {
@@ -123,15 +131,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _signIn(PhoneAuthCredential credential) async {
+    debugPrint('[OTP] signIn → attempting Firebase signInWithCredential');
     try {
       final result =
           await FirebaseAuth.instance.signInWithCredential(credential);
       if (!mounted) return;
 
       final isNewUser = result.additionalUserInfo?.isNewUser ?? true;
+      debugPrint('[OTP] signIn → success uid=${result.user?.uid} isNewUser=$isNewUser expectNewUser=${widget.expectNewUser}');
 
-      // Number already registered — sign out and send to the sign-in page
       if (widget.expectNewUser && !isNewUser) {
+        debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
         context.go('/auth/login', extra: {
@@ -145,7 +155,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       ref.read(authProvider.notifier).login(result.user?.uid ?? widget.phone);
 
       if (widget.expectNewUser) {
-        // New account — save all registration fields
+        debugPrint('[OTP] signIn → new account, saving registration data');
         ref.read(userProfileProvider.notifier).update(
               name: widget.name,
               email: widget.email,
@@ -153,12 +163,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               dob: widget.dob,
             );
       } else {
-        // Returning user — restore Hive data and seed phone from auth
+        debugPrint('[OTP] signIn → returning user, loading profile from Hive');
         ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
       }
 
+      debugPrint('[OTP] signIn → redirecting to ${widget.redirectPath}');
       context.go(widget.redirectPath);
     } on FirebaseAuthException catch (e) {
+      debugPrint('[OTP] signIn failed → code=${e.code} message=${e.message}');
       if (mounted) {
         _clearBoxes();
         setState(() {
