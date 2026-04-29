@@ -17,7 +17,9 @@ const links = {
         { label: 'Track Order', href: '/track-order' },
         { label: 'Returns & Refunds', href: '/returns' },
         { label: 'Shipping Policy', href: '/shipping-policy' },
-        { label: 'Privacy Policy', href: '/privacy' },
+        { label: 'Privacy Policy', href: '/privacy-policy' },
+        { label: 'Terms of Service', href: '/terms' },
+        { label: 'Account Deletion', href: '/account-deletion' },
     ],
     Connect: [
         { label: 'Instagram', href: 'https://instagram.com/auramika.daily' },
@@ -105,7 +107,8 @@ export default function Footer() {
                     © 2026 Auramika Daily. All rights reserved. Premium Imitation Jewelry.
                 </p>
                 <div className="flex gap-6">
-                    <Link href="/privacy" className="font-outfit text-xs text-brand-light/30 hover:text-brand-accent tracking-wider transition-colors">Privacy</Link>
+                    <Link href="/privacy-policy" className="font-outfit text-xs text-brand-light/30 hover:text-brand-accent tracking-wider transition-colors">Privacy</Link>
+                    <Link href="/terms" className="font-outfit text-xs text-brand-light/30 hover:text-brand-accent tracking-wider transition-colors">Terms</Link>
                     <Link href="/returns" className="font-outfit text-xs text-brand-light/30 hover:text-brand-accent tracking-wider transition-colors">Returns</Link>
                     <Link href="/shipping-policy" className="font-outfit text-xs text-brand-light/30 hover:text-brand-accent tracking-wider transition-colors">Shipping</Link>
                 </div>
