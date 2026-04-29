@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_cashfree_pg_sdk/api/cferrorresponse/cferrorresponse.dart';
 import 'package:flutter_cashfree_pg_sdk/api/cfpayment/cfwebcheckoutpayment.dart';
 import 'package:flutter_cashfree_pg_sdk/api/cfpaymentgateway/cfpaymentgatewayservice.dart';
@@ -129,25 +131,36 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _fetchCurrentLocation() async {
     setState(() => _locating = true);
     try {
+      // 1. Check GPS is switched on
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) _showLocationSnackBar('Please enable location services on your device.');
+        return;
+      }
+
+      // 2. Check / request permission
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Location permission denied'),
-            behavior: SnackBarBehavior.floating,
-          ));
-        }
+      if (permission == LocationPermission.denied) {
+        if (mounted) _showLocationSnackBar('Location permission denied. Please allow it to auto-fill your address.');
+        return;
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) _showLocationSnackBar('Location permission permanently denied. Enable it in App Settings.');
         return;
       }
 
+      // 3. Fetch position with a 15-second timeout
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 15),
+        ),
       );
 
+      // 4. Reverse-geocode via OpenStreetMap Nominatim (free, no key required)
       final res = await Dio().get(
         'https://nominatim.openstreetmap.org/reverse',
         queryParameters: {
@@ -157,32 +170,43 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           'addressdetails': 1,
         },
         options: Options(
-          headers: {'User-Agent': 'AURAMIKA/1.0'},
+          headers: {'User-Agent': 'AuramikaApp/1.0 (contact@auramika.in)'},
+          connectTimeout: const Duration(seconds: 8),
           receiveTimeout: const Duration(seconds: 8),
         ),
       );
       if (!mounted) return;
 
-      final addr = res.data['address'] as Map<String, dynamic>? ?? {};
-      final road    = (addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? '') as String;
-      final city    = (addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['county'] ?? '') as String;
+      final addr = (res.data['address'] as Map<String, dynamic>?) ?? {};
+      final road    = [addr['house_number'], addr['road']].whereType<String>().join(' ').trim();
+      final suburb  = (addr['suburb'] ?? addr['neighbourhood'] ?? '') as String;
+      final line1   = road.isNotEmpty ? road : suburb;
+      final city    = (addr['city'] ?? addr['town'] ?? addr['state_district'] ?? addr['village'] ?? '') as String;
       final pinCode = (addr['postcode'] ?? '') as String;
 
       setState(() {
-        if (road.isNotEmpty)    _line1Ctrl.text = road;
-        if (city.isNotEmpty)    _cityCtrl.text  = city;
-        if (pinCode.length == 6) _pinCtrl.text  = pinCode;
+        if (line1.isNotEmpty)    _line1Ctrl.text = line1;
+        if (city.isNotEmpty)     _cityCtrl.text  = city;
+        if (pinCode.length == 6) _pinCtrl.text   = pinCode;
       });
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not fetch location. Try again.'),
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
+    } on TimeoutException {
+      if (mounted) _showLocationSnackBar('Location timed out. Check your GPS signal and try again.');
+    } catch (e) {
+      if (mounted) _showLocationSnackBar('Could not fetch location: ${e.toString().split('\n').first}');
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  void _showLocationSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.terraCotta,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ));
   }
 
   bool _validateAddress() {
