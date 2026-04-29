@@ -4,6 +4,13 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Request logger ────────────────────────────────────────────────────────────
+app.use((req, _res, next) => {
+  const ts = new Date().toISOString();
+  console.log(`[${ts}] ${req.method} ${req.url} — ip=${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
+  next();
+});
+
 // Serve all static assets (HTML, CSS, JS, images) from the repo root
 app.use(express.static(path.join(__dirname)));
 
@@ -78,20 +85,29 @@ const TERMS_SECTIONS = [
 ];
 
 app.get('/privacy', (_req, res) => {
+  console.log('[Route] /privacy → serving Privacy Policy');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(legalHtml('Privacy Policy', 'January 2025', PRIVACY_SECTIONS));
 });
 
 app.get('/terms', (_req, res) => {
+  console.log('[Route] /terms → serving Terms of Service');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(legalHtml('Terms of Service', 'January 2025', TERMS_SECTIONS));
 });
 
 // Fallback: serve index.html for any unmatched route
-app.get('*', (_req, res) => {
+app.get('*', (req, res) => {
+  console.log(`[Route] fallback → serving index.html for ${req.url}`);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ── Error handler ─────────────────────────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error(`[Error] ${req.method} ${req.url} → ${err.message}`);
+  res.status(500).send('Internal Server Error');
+});
+
 app.listen(PORT, () => {
-  console.log(`AURAMIKA server running on port ${PORT}`);
+  console.log(`[Server] AURAMIKA running on port ${PORT} — env=${process.env.NODE_ENV || 'development'}`);
 });
