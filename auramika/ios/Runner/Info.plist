@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AURAMIKA needs your location to auto-fill your delivery address.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -79,6 +81,14 @@
 		<string>whatsapp</string>
 		<string>mailto</string>
 		<string>https</string>
+		<string>upi</string>
+		<string>phonepe</string>
+		<string>paytm</string>
+		<string>gpay</string>
+		<string>credpay</string>
+		<string>bharatpe</string>
+		<string>mobikwik</string>
+		<string>freecharge</string>
 	</array>
 </dict>
 </plist>

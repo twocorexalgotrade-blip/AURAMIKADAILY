@@ -5,6 +5,7 @@ import 'package:flutter_cashfree_pg_sdk/api/cfsession/cfsession.dart';
 import 'package:flutter_cashfree_pg_sdk/api/cftheme/cftheme.dart';
 import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -53,6 +54,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   bool _paying = false;
   bool _pinLookingUp = false;
+  bool _locating = false;
   String? _pinError;
 
   final _cashfreeService = CashfreeService();
@@ -121,6 +123,65 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       setState(() { _pinLookingUp = false; _pinError = 'Invalid PIN code'; });
     } catch (_) {
       if (mounted) setState(() => _pinLookingUp = false);
+    }
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    setState(() => _locating = true);
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Location permission denied'),
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+
+      final res = await Dio().get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {
+          'lat': pos.latitude,
+          'lon': pos.longitude,
+          'format': 'json',
+          'addressdetails': 1,
+        },
+        options: Options(
+          headers: {'User-Agent': 'AURAMIKA/1.0'},
+          receiveTimeout: const Duration(seconds: 8),
+        ),
+      );
+      if (!mounted) return;
+
+      final addr = res.data['address'] as Map<String, dynamic>? ?? {};
+      final road    = (addr['road'] ?? addr['suburb'] ?? addr['neighbourhood'] ?? '') as String;
+      final city    = (addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['county'] ?? '') as String;
+      final pinCode = (addr['postcode'] ?? '') as String;
+
+      setState(() {
+        if (road.isNotEmpty)    _line1Ctrl.text = road;
+        if (city.isNotEmpty)    _cityCtrl.text  = city;
+        if (pinCode.length == 6) _pinCtrl.text  = pinCode;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not fetch location. Try again.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
     }
   }
 
@@ -360,6 +421,38 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 children: [
                   // ── Address Section ──────────────────────────────────────
                   _SectionHeader(label: 'DELIVERY ADDRESS', icon: Icons.location_on_outlined),
+                  const SizedBox(height: AppConstants.paddingS),
+
+                  // Use current location button
+                  GestureDetector(
+                    onTap: _locating ? null : _fetchCurrentLocation,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.forestGreen.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                        border: Border.all(color: AppColors.forestGreen.withValues(alpha: 0.4), width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _locating
+                              ? const SizedBox(
+                                  width: 13, height: 13,
+                                  child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.forestGreen),
+                                )
+                              : const Icon(Icons.my_location_rounded, size: 13, color: AppColors.forestGreen),
+                          const SizedBox(width: 6),
+                          Text(
+                            _locating ? 'Detecting location…' : 'Use my current location',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              fontSize: 12, color: AppColors.forestGreen, fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: AppConstants.paddingM),
 
                   // Saved address chips
