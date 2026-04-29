@@ -248,7 +248,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               : firstItem.productName)
           : 'Order';
 
-      if (_payment == _PaymentMethod.cashfree || _payment == _PaymentMethod.card) {
+      if (_payment == _PaymentMethod.cashfree) {
         // ── Online payment via Cashfree (routed through backend) ─────
         final backendItems = cart.items.map((i) => {
           'productId': i.productId,
@@ -284,7 +284,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         _pendingDate        = dateStr;
 
         final session = CFSessionBuilder()
-            .setEnvironment(result.isTestMode ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION)
+            .setEnvironment((AppConstants.cashfreeTestMode || result.isTestMode) ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION)
             .setPaymentSessionId(result.sessionId)
             .setOrderId(result.orderId)
             .build();

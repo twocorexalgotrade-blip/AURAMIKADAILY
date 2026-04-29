@@ -620,7 +620,7 @@ class _WearItWithSection extends StatelessWidget {
                 final item = items[i];
                 final matColor = item.materialColor;
                 return GestureDetector(
-                  onTap: () {},
+                  onTap: () => context.push(AppRoutes.product(item.id)),
                   child: SizedBox(
                     width: 140,
                     child: Container(

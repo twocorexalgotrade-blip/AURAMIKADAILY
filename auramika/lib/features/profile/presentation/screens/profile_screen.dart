@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -190,6 +191,22 @@ class ProfileScreen extends ConsumerWidget {
                         onTap: () => Navigator.push(context, MaterialPageRoute(
                           builder: (_) => const PrivacyPolicyScreen(),
                         )),
+                      ),
+                      _MenuItem(
+                        icon: Icons.replay_rounded,
+                        label: 'Refund Policy',
+                        onTap: () async {
+                          final uri = Uri.parse(AppConstants.urlRefundPolicy);
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        },
+                      ),
+                      _MenuItem(
+                        icon: Icons.local_shipping_outlined,
+                        label: 'Shipping Policy',
+                        onTap: () async {
+                          final uri = Uri.parse(AppConstants.urlShippingPolicy);
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        },
                       ),
                     ],
                   ),

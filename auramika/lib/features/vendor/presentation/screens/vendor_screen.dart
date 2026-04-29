@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -7,6 +8,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/widgets/product_card.dart';
+
+enum _SortOrder { featured, priceLow, priceHigh, nameAZ }
 
 // ── Vendor Product Model ──────────────────────────────────────────────────────
 class VendorProduct {
@@ -108,15 +111,29 @@ class _VendorScreenState extends State<VendorScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final vendor = _mockVendor;
+  _SortOrder _sortOrder = _SortOrder.featured;
 
   // ── Material filter tabs ──────────────────────────────────────────────────
   static const List<String> _tabs = ['All', 'Gold', 'Silver', 'Coming Soon'];
 
   List<VendorProduct> get _filteredProducts {
     final tab = _tabs[_tabController.index];
-    if (tab == 'All') return vendor.products;
-    if (tab == 'Coming Soon') return [];
-    return vendor.products.where((p) => p.material == tab).toList();
+    var list = tab == 'All'
+        ? vendor.products.toList()
+        : tab == 'Coming Soon'
+            ? <VendorProduct>[]
+            : vendor.products.where((p) => p.material == tab).toList();
+    switch (_sortOrder) {
+      case _SortOrder.priceLow:
+        list.sort((a, b) => a.price.compareTo(b.price));
+      case _SortOrder.priceHigh:
+        list.sort((a, b) => b.price.compareTo(a.price));
+      case _SortOrder.nameAZ:
+        list.sort((a, b) => a.name.compareTo(b.name));
+      case _SortOrder.featured:
+        break;
+    }
+    return list;
   }
 
   @override
@@ -130,6 +147,43 @@ class _VendorScreenState extends State<VendorScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _showShareSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _VendorShareSheet(vendor: vendor),
+    );
+  }
+
+  void _showSearchSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _VendorSearchSheet(
+        products: vendor.products,
+        onProductTap: (id) {
+          Navigator.pop(context);
+          context.push(AppRoutes.product(id));
+        },
+      ),
+    );
+  }
+
+  void _showSortSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SortSheet(
+        current: _sortOrder,
+        onSelect: (order) {
+          setState(() => _sortOrder = order);
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   @override
@@ -157,11 +211,11 @@ class _VendorScreenState extends State<VendorScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.white),
-                onPressed: () {},
+                onPressed: _showShareSheet,
               ),
               IconButton(
                 icon: const Icon(Icons.search_rounded, size: 20, color: AppColors.white),
-                onPressed: () {},
+                onPressed: _showSearchSheet,
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -189,7 +243,12 @@ class _VendorScreenState extends State<VendorScreen>
           // ── Filter summary bar ──────────────────────────────────────────
           if (filtered.isNotEmpty)
             SliverToBoxAdapter(
-              child: _FilterSummaryBar(count: filtered.length, material: currentTab),
+              child: _FilterSummaryBar(
+                count: filtered.length,
+                material: currentTab,
+                sortOrder: _sortOrder,
+                onSort: _showSortSheet,
+              ),
             ),
 
           // ── Product grid or empty state ─────────────────────────────────
@@ -585,8 +644,15 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
 class _FilterSummaryBar extends StatelessWidget {
   final int count;
   final String material;
+  final _SortOrder sortOrder;
+  final VoidCallback onSort;
 
-  const _FilterSummaryBar({required this.count, required this.material});
+  const _FilterSummaryBar({
+    required this.count,
+    required this.material,
+    required this.sortOrder,
+    required this.onSort,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -667,20 +733,25 @@ class _FilterSummaryBar extends StatelessWidget {
 
           // Sort button
           GestureDetector(
-            onTap: () {},
+            onTap: onSort,
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.tune_rounded,
                   size: 14,
-                  color: AppColors.textMuted,
+                  color: sortOrder != _SortOrder.featured
+                      ? AppColors.forestGreen
+                      : AppColors.textMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'SORT',
+                  sortOrder != _SortOrder.featured ? 'SORTED' : 'SORT',
                   style: AppTextStyles.labelSmall.copyWith(
                     fontSize: 9,
                     letterSpacing: 1.5,
+                    color: sortOrder != _SortOrder.featured
+                        ? AppColors.forestGreen
+                        : null,
                   ),
                 ),
               ],
@@ -794,4 +865,369 @@ class _BannerPatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+// ── Vendor Share Sheet ────────────────────────────────────────────────────────
+class _VendorShareSheet extends StatelessWidget {
+  final VendorInfo vendor;
+  const _VendorShareSheet({required this.vendor});
+
+  String get _shareText =>
+      '${vendor.name}\n${vendor.tagline}\n'
+      '${vendor.totalProducts} products · ★ ${vendor.rating}\nShop on AURAMIKA';
+
+  void _copyAndClose(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: _shareText));
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text('Copied to clipboard',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+      backgroundColor: AppColors.forestGreen,
+      duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(AppConstants.paddingM, AppConstants.paddingM,
+          AppConstants.paddingM, AppConstants.paddingM + bottomPad),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36, height: 3,
+            decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: AppConstants.paddingM),
+          Row(
+            children: [
+              Container(
+                width: 52, height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.forestGreen,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gold, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    vendor.name.substring(0, 1),
+                    style: AppTextStyles.displaySmall
+                        .copyWith(color: AppColors.gold, fontSize: 22),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppConstants.paddingM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(vendor.name,
+                        style: AppTextStyles.titleSmall.copyWith(fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(vendor.location,
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textMuted, fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.paddingL),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _VendorShareOption(
+                  icon: Icons.message_rounded, label: 'WhatsApp',
+                  color: const Color(0xFF25D366),
+                  onTap: () => _copyAndClose(context)),
+              _VendorShareOption(
+                  icon: Icons.camera_alt_outlined, label: 'Instagram',
+                  color: const Color(0xFFE1306C),
+                  onTap: () => _copyAndClose(context)),
+              _VendorShareOption(
+                  icon: Icons.copy_rounded, label: 'Copy Link',
+                  color: AppColors.gold,
+                  onTap: () => _copyAndClose(context)),
+              _VendorShareOption(
+                  icon: Icons.more_horiz_rounded, label: 'More',
+                  color: AppColors.textMuted,
+                  onTap: () => _copyAndClose(context)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VendorShareOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _VendorShareOption({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 52, height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 6),
+          Text(label,
+              style: AppTextStyles.labelSmall
+                  .copyWith(fontSize: 10, letterSpacing: 0.5)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Vendor Search Sheet ───────────────────────────────────────────────────────
+class _VendorSearchSheet extends StatefulWidget {
+  final List<VendorProduct> products;
+  final ValueChanged<String> onProductTap;
+
+  const _VendorSearchSheet(
+      {required this.products, required this.onProductTap});
+
+  @override
+  State<_VendorSearchSheet> createState() => _VendorSearchSheetState();
+}
+
+class _VendorSearchSheetState extends State<_VendorSearchSheet> {
+  String _query = '';
+
+  List<VendorProduct> get _results {
+    if (_query.isEmpty) return widget.products;
+    final q = _query.toLowerCase();
+    return widget.products
+        .where((p) =>
+            p.name.toLowerCase().contains(q) ||
+            p.material.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    final results = _results;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      padding: EdgeInsets.only(bottom: bottomPad),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: AppConstants.paddingM),
+          Container(
+            width: 36, height: 3,
+            decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: AppConstants.paddingM),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.paddingM),
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius:
+                    BorderRadius.circular(AppConstants.radiusS),
+                border: Border.all(
+                    color: AppColors.divider, width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: AppConstants.paddingS),
+                  const Icon(Icons.search_rounded,
+                      size: 18, color: AppColors.textMuted),
+                  const SizedBox(width: AppConstants.paddingS),
+                  Expanded(
+                    child: TextField(
+                      autofocus: true,
+                      onChanged: (v) => setState(() => _query = v),
+                      style: AppTextStyles.bodySmall
+                          .copyWith(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        hintStyle: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textMuted, fontSize: 13),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppConstants.paddingS),
+          Expanded(
+            child: results.isEmpty
+                ? Center(
+                    child: Text('No products found',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textMuted)),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.paddingM),
+                    itemCount: results.length,
+                    itemBuilder: (context, i) {
+                      final p = results[i];
+                      final matColor = p.material == 'Gold'
+                          ? AppColors.gold
+                          : const Color(0xFFC0C0C0);
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 4),
+                        leading: Container(
+                          width: 42, height: 42,
+                          decoration: BoxDecoration(
+                            color: matColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.radiusXS),
+                          ),
+                          child: Icon(Icons.diamond_outlined,
+                              color: matColor, size: 18),
+                        ),
+                        title: Text(p.name,
+                            style: AppTextStyles.titleSmall
+                                .copyWith(fontSize: 13)),
+                        subtitle: Text(p.material,
+                            style: AppTextStyles.bodySmall.copyWith(
+                                fontSize: 10,
+                                color: AppColors.textMuted)),
+                        trailing: Text('₹${p.price.toInt()}',
+                            style: AppTextStyles.priceTag
+                                .copyWith(fontSize: 14)),
+                        onTap: () => widget.onProductTap(p.id),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sort Sheet ────────────────────────────────────────────────────────────────
+class _SortSheet extends StatelessWidget {
+  final _SortOrder current;
+  final ValueChanged<_SortOrder> onSelect;
+
+  const _SortSheet({required this.current, required this.onSelect});
+
+  static const _options = [
+    (_SortOrder.featured, 'Featured', Icons.auto_awesome_outlined),
+    (_SortOrder.priceLow, 'Price: Low to High', Icons.arrow_upward_rounded),
+    (_SortOrder.priceHigh, 'Price: High to Low', Icons.arrow_downward_rounded),
+    (_SortOrder.nameAZ, 'Name: A to Z', Icons.sort_by_alpha_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(AppConstants.paddingM, AppConstants.paddingM,
+          AppConstants.paddingM, AppConstants.paddingM + bottomPad),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36, height: 3,
+            decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: AppConstants.paddingM),
+          Text('SORT BY',
+              style: AppTextStyles.categoryChip
+                  .copyWith(fontSize: 11, letterSpacing: 3.0)),
+          const SizedBox(height: AppConstants.paddingM),
+          ..._options.map((opt) {
+            final (order, label, icon) = opt;
+            final isSelected = current == order;
+            return GestureDetector(
+              onTap: () => onSelect(order),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.paddingM,
+                    horizontal: AppConstants.paddingS),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.forestGreen.withValues(alpha: 0.06)
+                      : Colors.transparent,
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.radiusXS),
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon,
+                        size: 18,
+                        color: isSelected
+                            ? AppColors.forestGreen
+                            : AppColors.textMuted),
+                    const SizedBox(width: AppConstants.paddingM),
+                    Expanded(
+                      child: Text(label,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontSize: 14,
+                            color: isSelected
+                                ? AppColors.forestGreen
+                                : AppColors.textPrimary,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          )),
+                    ),
+                    if (isSelected)
+                      const Icon(Icons.check_rounded,
+                          size: 16, color: AppColors.forestGreen),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }

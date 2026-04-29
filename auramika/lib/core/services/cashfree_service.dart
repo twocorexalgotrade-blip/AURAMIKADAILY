@@ -25,7 +25,7 @@ class CashfreeService {
   Future<String> _getIdToken() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Please sign in before placing an order.');
-    return user.getIdToken();
+    return user.getIdToken().then((t) => t!);
   }
 
   /// Creates a backend order and returns a Cashfree payment session.

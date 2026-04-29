@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -6,6 +7,28 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+
+class _AppObserver extends ProviderObserver {
+  @override
+  void didAddProvider(ProviderBase provider, Object? value, ProviderContainer container) {
+    debugPrint('[Riverpod] INIT ${provider.name ?? provider.runtimeType}: $value');
+  }
+
+  @override
+  void didUpdateProvider(ProviderBase provider, Object? previousValue, Object? newValue, ProviderContainer container) {
+    debugPrint('[Riverpod] UPDATE ${provider.name ?? provider.runtimeType}: $previousValue → $newValue');
+  }
+
+  @override
+  void didDisposeProvider(ProviderBase provider, ProviderContainer container) {
+    debugPrint('[Riverpod] DISPOSE ${provider.name ?? provider.runtimeType}');
+  }
+
+  @override
+  void providerDidFail(ProviderBase provider, Object error, StackTrace stackTrace, ProviderContainer container) {
+    debugPrint('[Riverpod] ERROR ${provider.name ?? provider.runtimeType}: $error\n$stackTrace');
+  }
+}
 
 /// ─────────────────────────────────────────────────────────────────────────────
 ///  AURAMIKA — Entry Point
@@ -39,9 +62,9 @@ void main() async {
   ]);
 
   runApp(
-    // ProviderScope is the root of the Riverpod dependency injection tree
-    const ProviderScope(
-      child: AuramikaApp(),
+    ProviderScope(
+      observers: [_AppObserver()],
+      child: const AuramikaApp(),
     ),
   );
 }

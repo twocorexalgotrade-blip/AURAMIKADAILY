@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -33,6 +34,8 @@ class TermsConditionsScreen extends StatelessWidget {
                 .animate()
                 .fadeIn(duration: AppConstants.animNormal),
           ),
+          const SizedBox(height: AppConstants.paddingM),
+          ViewOnWebsiteButton(url: AppConstants.urlTerms),
           const SizedBox(height: 100),
         ],
       ),
@@ -202,6 +205,57 @@ class LegalSection extends StatelessWidget {
                 fontSize: 12,
                 color: AppColors.textSecondary,
                 height: 1.7,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ViewOnWebsiteButton extends StatelessWidget {
+  final String url;
+  const ViewOnWebsiteButton({super.key, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Could not open. Please try again.',
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
+                ),
+                backgroundColor: AppColors.terraCotta,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.forestGreen.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(AppConstants.radiusS),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.open_in_browser_rounded,
+                size: 14, color: AppColors.forestGreen.withValues(alpha: 0.7)),
+            const SizedBox(width: 6),
+            Text(
+              'View on auramikadaily.com',
+              style: AppTextStyles.bodySmall.copyWith(
+                fontSize: 11,
+                color: AppColors.forestGreen.withValues(alpha: 0.7),
               ),
             ),
           ],

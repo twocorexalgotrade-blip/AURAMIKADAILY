@@ -143,7 +143,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // state do not require the widget to be attached. Doing this first
       // ensures data is persisted even when Android auto-verifies the OTP
       // while the user has already navigated away from the OTP screen.
-      if (widget.expectNewUser) {
+      // Guard on isNewUser too: if the phone already had a Firebase account
+      // (e.g. created by a previous abandoned sign-in attempt), we must not
+      // overwrite that user's existing Hive profile with the registration form data.
+      if (widget.expectNewUser && isNewUser) {
         debugPrint('[OTP] signIn → saving registration data name="${widget.name}" email="${widget.email}" phone="${widget.phone}" dob="${widget.dob}"');
         ref.read(userProfileProvider.notifier).update(
           name: widget.name,

@@ -19,11 +19,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   StreamSubscription<User?>? _sub;
 
   AuthNotifier() : super(const AuthState()) {
+    // Restore persisted session synchronously so the UI never flickers on cold start.
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      debugPrint('[Auth] init → restoring session uid=${currentUser.uid}');
+      state = AuthState(isLoggedIn: true, userId: currentUser.uid);
+    }
+
+    // Only handle sign-outs from the stream. Sign-ins are handled explicitly
+    // via login() so that the OTP create-account flow (which calls
+    // signInWithCredential then may immediately sign out for existing numbers)
+    // does not cause a premature isLoggedIn=true flash.
     _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
       debugPrint('[Auth] authStateChanges → user=${user?.uid ?? 'null'}');
-      state = user != null
-          ? AuthState(isLoggedIn: true, userId: user.uid)
-          : const AuthState();
+      if (user == null) {
+        state = const AuthState();
+      }
     });
   }
 

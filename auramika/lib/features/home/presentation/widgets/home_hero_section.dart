@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/router/app_router.dart';
 
 /// Full-screen editorial Hero Section
 ///
@@ -35,6 +34,7 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
       headline: 'Redefine\nElegance',
       subline: 'Gold · Silver · Diamond',
       tag: 'OLD MONEY',
+      vibeId: 'old_money',
       bgColor: AppColors.forestGreen,
       accentColor: AppColors.gold,
       imageUrl: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80',
@@ -43,6 +43,7 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
       headline: 'Own The\nStreet',
       subline: 'Chunky · Edgy · Bold',
       tag: 'STREET WEAR',
+      vibeId: 'street_wear',
       bgColor: Color(0xFF1A1A1A),
       accentColor: AppColors.terraCotta,
       imageUrl: 'https://images.unsplash.com/photo-1679973297332-cb76bf05275c?auto=format&fit=crop&w=800&h=1200&q=80',
@@ -51,6 +52,7 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
       headline: 'Simply\nYou',
       subline: 'Office · College · Everyday',
       tag: 'MINIMALIST',
+      vibeId: 'daily_minimalist',
       bgColor: AppColors.brass,
       accentColor: AppColors.goldLight,
       imageUrl: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&crop=entropy&w=800&h=1200&q=80',
@@ -253,7 +255,7 @@ class _HomeHeroSectionState extends State<HomeHeroSection>
                 // CTA row
                 Row(
                   children: [
-                    _HeroCTA(accentColor: slide.accentColor),
+                    _HeroCTA(accentColor: slide.accentColor, vibeId: slide.vibeId),
                     const SizedBox(width: AppConstants.paddingM),
                     _ExpressHeroBadge(),
                   ],
@@ -325,12 +327,13 @@ class _VibePill extends StatelessWidget {
 // ── Hero CTA Button ───────────────────────────────────────────────────────────
 class _HeroCTA extends StatelessWidget {
   final Color accentColor;
-  const _HeroCTA({required this.accentColor});
+  final String vibeId;
+  const _HeroCTA({required this.accentColor, required this.vibeId});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go(AppRoutes.shop),
+      onTap: () => context.push('/style-vibe/$vibeId'),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppConstants.paddingM,
@@ -432,6 +435,7 @@ class _HeroSlide {
   final String headline;
   final String subline;
   final String tag;
+  final String vibeId;
   final Color bgColor;
   final Color accentColor;
   final String imageUrl;
@@ -440,6 +444,7 @@ class _HeroSlide {
     required this.headline,
     required this.subline,
     required this.tag,
+    required this.vibeId,
     required this.bgColor,
     required this.accentColor,
     required this.imageUrl,

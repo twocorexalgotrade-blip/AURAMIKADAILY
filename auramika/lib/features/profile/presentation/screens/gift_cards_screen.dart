@@ -109,7 +109,75 @@ class GiftCardsScreen extends StatelessWidget {
   }
 }
 
-class _RedeemInput extends StatelessWidget {
+class _RedeemInput extends StatefulWidget {
+  @override
+  State<_RedeemInput> createState() => _RedeemInputState();
+}
+
+class _RedeemInputState extends State<_RedeemInput> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _apply() {
+    final code = _controller.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please enter a gift card code',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+        backgroundColor: AppColors.textMuted,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+      ));
+      return;
+    }
+
+    final match = _giftCards.where((c) => c.code == code).firstOrNull;
+    if (match == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Invalid gift card code',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+      ));
+      return;
+    }
+
+    if (!match.isActive || match.balance <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('This gift card has already been used',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+        backgroundColor: AppColors.textMuted,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+      ));
+      return;
+    }
+
+    _controller.clear();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          '₹${match.balance.toInt()} gift card applied!',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+      backgroundColor: AppColors.forestGreen,
+      duration: const Duration(seconds: 3),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -138,6 +206,9 @@ class _RedeemInput extends StatelessWidget {
                         width: 0.5),
                   ),
                   child: TextField(
+                    controller: _controller,
+                    textCapitalization: TextCapitalization.characters,
+                    onSubmitted: (_) => _apply(),
                     style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 12, letterSpacing: 1.2),
                     decoration: InputDecoration(
@@ -153,7 +224,7 @@ class _RedeemInput extends StatelessWidget {
               ),
               const SizedBox(width: AppConstants.paddingS),
               GestureDetector(
-                onTap: () {},
+                onTap: _apply,
                 child: Container(
                   height: 42,
                   padding: const EdgeInsets.symmetric(

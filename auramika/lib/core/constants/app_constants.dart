@@ -22,11 +22,15 @@ abstract class AppConstants {
   static const List<String> materialTypes = ['All', 'Brass', 'Copper'];
 
   // ── Website URLs ─────────────────────────────────────────────────────────
-  static const String websiteBase       = 'https://auramika.in';
-  static const String urlPrivacyPolicy  = 'https://auramika.in/privacy.html';
-  static const String urlTerms          = 'https://auramika.in/terms.html';
-  static const String urlRefundPolicy   = 'https://auramika.in/refund-policy.html';
-  static const String urlShippingPolicy = 'https://auramika.in/shipping-policy.html';
+  static const String websiteBase       = 'https://auramikadaily.com';
+  static const String urlPrivacyPolicy  = 'https://auramikadaily.com/privacy.html';
+  static const String urlTerms          = 'https://auramikadaily.com/terms.html';
+  static const String urlRefundPolicy   = 'https://auramikadaily.com/returns';
+  static const String urlShippingPolicy = 'https://auramikadaily.com/shipping-policy';
+
+  // ── Cashfree ──────────────────────────────────────────────────────────────
+  // Set to true to force Cashfree sandbox (test) mode regardless of backend.
+  static const bool cashfreeTestMode = true;
 
   // ── API ───────────────────────────────────────────────────────────────────
   // Update to your Render backend URL (Render dashboard → service → URL).

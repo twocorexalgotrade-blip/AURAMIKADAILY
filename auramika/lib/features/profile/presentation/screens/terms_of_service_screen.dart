@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/auramika_app_bar.dart';
-import 'terms_conditions_screen.dart' show LegalHeader, LegalSection, LegalSectionData;
+import 'terms_conditions_screen.dart' show LegalHeader, LegalSection, LegalSectionData, ViewOnWebsiteButton;
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
@@ -33,6 +33,8 @@ class TermsOfServiceScreen extends StatelessWidget {
                 .animate()
                 .fadeIn(duration: AppConstants.animNormal),
           ),
+          const SizedBox(height: AppConstants.paddingM),
+          ViewOnWebsiteButton(url: AppConstants.urlTerms),
           const SizedBox(height: 100),
         ],
       ),
