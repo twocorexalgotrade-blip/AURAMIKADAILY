@@ -124,7 +124,28 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
+  bool _validateAddress() {
+    final missing = <String>[];
+    if (_nameCtrl.text.trim().isEmpty)  missing.add('Full Name');
+    if (_phoneCtrl.text.trim().isEmpty) missing.add('Phone');
+    if (_line1Ctrl.text.trim().isEmpty) missing.add('Address');
+    if (_cityCtrl.text.trim().isEmpty)  missing.add('City');
+    if (_pinCtrl.text.trim().length != 6) missing.add('PIN Code');
+    if (missing.isEmpty) return true;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('Please fill in: ${missing.join(', ')}'),
+        backgroundColor: AppColors.terraCotta,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ));
+    return false;
+  }
+
   Future<void> _pay() async {
+    if (!_validateAddress()) return;
     setState(() => _paying = true);
     try {
       final cart  = ref.read(cartProvider);
