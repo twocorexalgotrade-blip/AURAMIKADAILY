@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wishlist — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="wishlist">
+  <main class="au-page">
+    <header class="au-page-head">
+      <div class="au-page-head__crumbs"><a href="index.html">House</a><span>·</span>Wishlist</div>
+      <div class="au-page-head__row">
+        <div>
+          <h1>Held in <em>your aura</em></h1>
+          <p>Pieces you've saved for a slower morning. Move any of them into your apothecary when ready.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="au-grid" id="wlGrid"></div>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('wlGrid');
+      // Demo: a fixed wishlist (real flow stores in localStorage from product cards)
+      const SAMPLE = [
+        ['Aanya','Solitaire · 22k','assets/images/gold_ring.jpg',184000],
+        ['Devika','Polki Set','assets/images/Pendant1.4.jpg',284000],
+        ['Tara','Drop · 22k','assets/images/earring1.jpg',42000],
+      ];
+      let wl = [];
+      try { wl = JSON.parse(localStorage.getItem('auramika.wishlist') || '[]'); } catch (e) {}
+      if (!wl.length) wl = SAMPLE;
+
+      if (!wl.length) {
+        grid.outerHTML = `
+          <div class="au-empty-state">
+            <div class="glyph">♡</div>
+            <h3>No pieces held yet</h3>
+            <p>Tap the heart on any piece in the apothecary to keep it here.</p>
+            <a href="products.html" class="au-btn au-btn--primary" style="display:inline-flex;text-decoration:none;" data-cursor="Browse"><span>Open Apothecary</span><span class="arrow">→</span></a>
+          </div>`;
+        return;
+      }
+
+      wl.forEach(([n, m, i, p]) => {
+        const a = document.createElement('a');
+        a.href = `product-detail.html?name=${encodeURIComponent(n)}&price=${p}&img=${encodeURIComponent(i)}&meta=${encodeURIComponent(m)}`;
+        a.className = 'au-prod';
+        a.dataset.cursor = 'View';
+        a.innerHTML = `
+          <div class="au-prod__media">
+            <span class="au-prod__tag --gold">Held</span>
+            <img src="${i}" alt="${n}" loading="lazy">
+          </div>
+          <div class="au-prod__body">
+            <div class="au-prod__meta">${m}</div>
+            <h3 class="au-prod__name">${n}</h3>
+            <div class="au-prod__row">
+              <span class="au-prod__price">₹${p.toLocaleString('en-IN')}</span>
+              <button class="au-prod__add" data-cursor="Add" data-name="${n}" data-price="${p}" data-img="${i}" data-meta="${m}">+</button>
+            </div>
+          </div>`;
+        grid.appendChild(a);
+      });
+
+      grid.addEventListener('click', (e) => {
+        const b = e.target.closest('.au-prod__add');
+        if (!b) return;
+        e.preventDefault(); e.stopPropagation();
+        window.AURA?.addToCart({ name: b.dataset.name, price: parseInt(b.dataset.price,10), img: b.dataset.img, meta: b.dataset.meta });
+        const img = b.closest('.au-prod').querySelector('img');
+        window.AURA?.flyTo(img, document.getElementById('auKarat'));
+      });
+    });
+  </script>
+</body>
+</html>

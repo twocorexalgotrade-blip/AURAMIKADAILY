@@ -30,7 +30,7 @@ abstract class AppConstants {
 
   // ── Cashfree ──────────────────────────────────────────────────────────────
   // Set to true to force Cashfree sandbox (test) mode regardless of backend.
-  static const bool cashfreeTestMode = true;
+  static const bool cashfreeTestMode = false;
 
   // ── API ───────────────────────────────────────────────────────────────────
   // Update to your Render backend URL (Render dashboard → service → URL).

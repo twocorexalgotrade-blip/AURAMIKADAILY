@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ring Band Profile (Gold) -->
+  <defs>
+    <linearGradient id="goldGradientSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDB931" />
+      <stop offset="50%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#BF953F" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Band seen from side is an ellipse/thin rectangle -->
+  <path d="M50 256 Q256 350 462 256 Q256 162 50 256 Z" fill="none" stroke="url(#goldGradientSide)" stroke-width="30" />
+  
+  <!-- Setting Profile -->
+  <path d="M236 170 L256 256 L276 170 Z" fill="#FDB931" />
+  
+  <!-- Diamond Profile (Side View) -->
+  <g transform="translate(256, 150)">
+    <!-- Pavilion (Bottom Cone) -->
+    <path d="M-30 0 L0 40 L30 0 Z" fill="rgba(200, 240, 255, 0.4)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+    <!-- Crown (Top) -->
+    <path d="M-30 0 L-20 -15 L20 -15 L30 0 Z" fill="rgba(255, 255, 255, 0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="1"/>
+    <!-- Table -->
+    <line x1="-20" y1="-15" x2="20" y2="-15" stroke="white" stroke-width="2"/>
+  </g>
+</svg>

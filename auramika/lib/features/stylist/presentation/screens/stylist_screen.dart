@@ -18,6 +18,16 @@ import '../../data/openai_service.dart';
 
 const _kAiConsentKey = 'aiStylistConsent';
 
+// Returns true when the device region is China mainland (CN).
+// OpenAI (GPT-4o) lacks the MIIT permit required under China's DST regulations,
+// so the AI feature must be suppressed for CN devices. Also deselect China in
+// App Store Connect → Pricing & Availability to prevent distribution entirely.
+bool get _isChina {
+  final locale = Platform.localeName; // e.g. "zh_CN", "en_US"
+  final parts = locale.split('_');
+  return parts.length >= 2 && parts.last.toUpperCase() == 'CN';
+}
+
 enum _MirrorState { idle, scanning, revealed }
 
 class StylistScreen extends ConsumerStatefulWidget {
@@ -183,6 +193,7 @@ class _StylistScreenState extends ConsumerState<StylistScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isChina) return const _ChinaRegionGate();
     final screenH = MediaQuery.of(context).size.height;
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
@@ -558,6 +569,40 @@ class _PickerOption extends StatelessWidget {
           const SizedBox(height: AppConstants.paddingS),
           Text(label.toUpperCase(), style: AppTextStyles.categoryChip.copyWith(fontSize: 10, letterSpacing: 1.5)),
         ]),
+      ),
+    );
+  }
+}
+
+class _ChinaRegionGate extends StatelessWidget {
+  const _ChinaRegionGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingXL),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.block_rounded, size: 48, color: AppColors.textMuted),
+              const SizedBox(height: AppConstants.paddingL),
+              Text(
+                'Not Available',
+                style: AppTextStyles.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.paddingS),
+              Text(
+                'The AI Stylist feature is not available in your region.',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -157,6 +158,11 @@ class ProfileScreen extends ConsumerWidget {
                         onTap: () => Navigator.push(context, MaterialPageRoute(
                           builder: (_) => const HelpScreen(),
                         )),
+                      ),
+                      _MenuItem(
+                        icon: Icons.smart_toy_outlined,
+                        label: 'AI Stylist Settings',
+                        onTap: () => _showAiConsentDialog(context),
                       ),
                     ],
                   ),
@@ -329,6 +335,60 @@ class ProfileScreen extends ConsumerWidget {
             child: Text('Delete',
                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showAiConsentDialog(BuildContext context) {
+    final box = Hive.box('profile');
+    final consentGiven = box.get('aiStylistConsent', defaultValue: false) as bool;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.background,
+        title: Text('AI Stylist Settings', style: AppTextStyles.titleMedium),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Status: ${consentGiven ? 'Consent active' : 'No consent given'}',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: consentGiven ? AppColors.forestGreen : AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'When you use the Magic Mirror feature, your outfit photo is sent to OpenAI for jewelry matching. You can withdraw consent at any time — you will be asked again on next use.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+          ),
+          if (consentGiven)
+            TextButton(
+              onPressed: () {
+                box.put('aiStylistConsent', false);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('AI consent withdrawn. You will be asked again next time.',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.white)),
+                    backgroundColor: AppColors.forestGreen,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              },
+              child: Text('Withdraw Consent',
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.terraCotta)),
+            ),
         ],
       ),
     );

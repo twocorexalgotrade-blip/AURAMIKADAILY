@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="auth">
+  <main class="au-page" style="padding-top:0">
+    <div class="au-form-wrap">
+      <aside class="au-form-side">
+        <div>
+          <span class="au-eyebrow">Welcome</span>
+          <h1>The house knows you <em>already</em>.</h1>
+          <p>Tell us your name. We'll foil-press it on every certificate, every box, every aura card.</p>
+        </div>
+        <div class="quote">
+          "It is chosen, the way one chooses a name."
+        </div>
+      </aside>
+
+      <section class="au-form-card">
+        <h2>A small naam karan</h2>
+        <p class="lede">A few details so the house can welcome you properly.</p>
+
+        <form onsubmit="event.preventDefault(); window.AURA?.toast('Welcome to the house'); setTimeout(()=>location.href='index.html#mirror', 900);">
+          <div class="field">
+            <label>Your name</label>
+            <input type="text" placeholder="Aanya R." required />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" placeholder="aanya@auramika.com" />
+          </div>
+          <div class="field">
+            <label>Date of birth (optional)</label>
+            <input type="date" />
+          </div>
+          <div class="field">
+            <label>Pin code · we'll show ateliers nearby</label>
+            <input type="text" placeholder="400 001" />
+          </div>
+
+          <button type="submit" class="au-submit" data-cursor="Enter">Enter the House →</button>
+          <div class="alt">By signing in you accept our <a href="#">terms</a>.</div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Naam Karan — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="cart">
+  <main class="au-page">
+    <header class="au-page-head">
+      <div class="au-page-head__crumbs"><a href="index.html">House</a><span>·</span>Naam Karan</div>
+      <div class="au-page-head__row">
+        <div>
+          <h1>Your <em>Naam Karan</em></h1>
+          <p>Each piece will arrive in our ivory case, hand-tied with a silken thread. Tell us the name we'll engrave on the certificate.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="au-cart" id="auCartLayout">
+      <div class="au-cart__list" id="cartList"></div>
+      <aside class="au-cart__summary">
+        <h3>The Ceremony</h3>
+        <div class="au-cart__line"><span>Sub-total</span><strong id="csSub">₹0</strong></div>
+        <div class="au-cart__line"><span>Hallmarking</span><strong>Included</strong></div>
+        <div class="au-cart__line"><span>Insurance</span><strong>Included</strong></div>
+        <div class="au-cart__line"><span>Shipping</span><strong>Free</strong></div>
+        <div class="au-cart__line total"><span class="k">To Pay</span><span class="v" id="csTotal">₹0</span></div>
+
+        <button class="au-cart__checkout" id="csCheckout" data-cursor="Begin">Begin Naam Karan →</button>
+
+        <div class="au-cart__naam">
+          <strong>Naam Karan</strong>
+          A naming ceremony for your pieces. The next step asks for the name we'll foil-press on your certificate.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      function render() {
+        const cart = window.AURA.getCart();
+        const list = document.getElementById('cartList');
+        if (!cart.length) {
+          list.innerHTML = `
+            <div class="au-cart__empty">
+              <div class="glyph">∅</div>
+              <h3>Your apothecary is empty</h3>
+              <p>Pull a drawer in the cabinet and place a piece inside.</p>
+              <a href="products.html" class="au-btn au-btn--primary" style="display:inline-flex;margin-top:8px;text-decoration:none;" data-cursor="Browse">
+                <span>Open Apothecary</span><span class="arrow">→</span>
+              </a>
+            </div>`;
+        } else {
+          list.innerHTML = '';
+          cart.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'au-cart__row';
+            row.innerHTML = `
+              <img src="${item.img}" alt="${item.name}">
+              <div class="info">
+                <div class="meta">${item.meta || ''} · ${item.karat || '22k · BIS'}</div>
+                <h3>${item.name}</h3>
+                <div class="price">₹${(item.price * (item.qty||1)).toLocaleString('en-IN')}</div>
+              </div>
+              <div class="actions">
+                <div class="au-cart__qty">
+                  <button data-act="dec" data-id="${item.id}" data-cursor="-">−</button>
+                  <span class="n">${item.qty || 1}</span>
+                  <button data-act="inc" data-id="${item.id}" data-cursor="+">+</button>
+                </div>
+                <button class="au-cart__remove" data-act="rm" data-id="${item.id}" data-cursor="Remove">Remove</button>
+              </div>`;
+            list.appendChild(row);
+          });
+
+          list.querySelectorAll('button[data-act]').forEach(b => {
+            b.addEventListener('click', () => {
+              const cart = window.AURA.getCart();
+              const i = cart.findIndex(x => x.id === b.dataset.id);
+              if (i < 0) return;
+              if (b.dataset.act === 'inc') cart[i].qty = (cart[i].qty || 1) + 1;
+              if (b.dataset.act === 'dec') cart[i].qty = Math.max(1, (cart[i].qty || 1) - 1);
+              if (b.dataset.act === 'rm')  cart.splice(i, 1);
+              window.AURA.setCart(cart);
+              render();
+            });
+          });
+        }
+        const total = window.AURA.cartTotal();
+        document.getElementById('csSub').textContent = '₹' + total.toLocaleString('en-IN');
+        document.getElementById('csTotal').textContent = '₹' + total.toLocaleString('en-IN');
+      }
+      render();
+
+      document.getElementById('csCheckout').addEventListener('click', () => {
+        if (!window.AURA.getCart().length) { window.AURA.toast('Add a piece first'); return; }
+        // Naam Karan flow — minimal prompt
+        const name = prompt('What name shall we engrave on the box?', 'You');
+        if (name) {
+          window.AURA.toast(`The ceremony for ${name} begins…`);
+          setTimeout(() => {
+            window.AURA.clearCart();
+            location.href = 'index.html';
+          }, 1600);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

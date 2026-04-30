@@ -12,6 +12,12 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/domain/auth_controller.dart';
 import '../../../profile/domain/user_profile_controller.dart';
 
+// Apple App Review test account — registered as a Firebase test phone number.
+// Phone: +91 98765 43210 / OTP: 949999
+// Add to Firebase Console → Authentication → Sign-in method → Phone → Test phone numbers.
+const _kReviewerPhone = '+919876543210';
+const _kReviewerOtp = '949999';
+
 class OtpScreen extends ConsumerStatefulWidget {
   final String phone;
   final String redirectPath;
@@ -43,6 +49,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   bool _sending = true;
   bool _verifying = false;
   String? _error;
+  // ignore: unused_field
   int _filledCount = 0;
 
   @override
@@ -142,7 +149,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             _verificationId = verificationId;
             _sending = false;
           });
-          _nodes[0].requestFocus();
+          if (widget.phone == _kReviewerPhone) {
+            _autoFillReviewerOtp();
+          } else {
+            _nodes[0].requestFocus();
+          }
         }
       },
       codeAutoRetrievalTimeout: (String verificationId) {
@@ -153,9 +164,19 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   void _clearBoxes() {
-    for (final c in _ctls) c.clear();
+    for (final c in _ctls) {
+      c.clear();
+    }
     setState(() => _filledCount = 0);
     _nodes[0].requestFocus();
+  }
+
+  void _autoFillReviewerOtp() {
+    for (var i = 0; i < 6; i++) {
+      _ctls[i].text = _kReviewerOtp[i];
+    }
+    setState(() => _filledCount = 6);
+    Future.microtask(_verify);
   }
 
   Future<void> _verify() async {
@@ -216,8 +237,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
       if (!mounted) return;
 
+      final isReviewerPhone = widget.phone == _kReviewerPhone;
+
       // Phone already had a live account — sign out and let them use sign-in.
-      if (widget.expectNewUser && !isNewUser) {
+      if (widget.expectNewUser && !isNewUser && !isReviewerPhone) {
         if (kDebugMode) debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
         // Still sync registration data so Firestore doc exists (idempotent if doc already there).
         _registerWithBackend();
@@ -233,7 +256,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
       // Phone has no account (deleted or never registered) — block sign-in
       // and redirect to create account instead.
-      if (!widget.expectNewUser && isNewUser) {
+      // Reviewer phone bypasses this: _fetchProfileFromBackend handles 404 by
+      // auto-registering, so the account is created on first sign-in.
+      if (!widget.expectNewUser && isNewUser && !isReviewerPhone) {
         if (kDebugMode) debugPrint('[OTP] signIn → no account found for phone, redirecting to register');
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
@@ -247,7 +272,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
       ref.read(authProvider.notifier).login(result.user?.uid ?? widget.phone);
 
-      if (!widget.expectNewUser) {
+      if (!widget.expectNewUser || isReviewerPhone) {
         if (kDebugMode) debugPrint('[OTP] signIn → returning user, loading profile from Hive');
         ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
         await _fetchProfileFromBackend(widget.phone);

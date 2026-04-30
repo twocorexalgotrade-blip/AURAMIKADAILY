@@ -25,7 +25,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           LegalHeader(
             icon: Icons.shield_outlined,
             title: 'Privacy Policy',
-            subtitle: 'Last updated: January 2025',
+            subtitle: 'Last updated: April 2025',
           ).animate().fadeIn(duration: AppConstants.animNormal).slideY(begin: -0.04, end: 0),
           const SizedBox(height: AppConstants.paddingM),
           ..._sections.map(
@@ -62,6 +62,11 @@ const _sections = [
     title: '4. Data Sharing',
     body:
         'We do not sell your personal data. We may share information with:\n\n• Delivery Partners: To fulfil and track your orders.\n• Payment Processors: To securely process transactions (data is encrypted).\n• Analytics Providers: Anonymised or aggregated data to understand usage patterns.\n• Legal Authorities: When required by law, court order, or to protect rights and safety.',
+  ),
+  LegalSectionData(
+    title: '4a. AI Styling Partner (OpenAI)',
+    body:
+        'The Magic Mirror feature uses OpenAI (api.openai.com) to match jewelry to your outfit. When you use this feature and grant consent, your outfit photo is transmitted securely to OpenAI for analysis. OpenAI does not retain the image after generating the recommendation, and the photo is not linked to your identity. This transfer only occurs after you provide explicit in-app consent and can be withdrawn at any time via Profile → AI Stylist Settings. For more details, see OpenAI\'s privacy policy at openai.com/policies/privacy-policy.',
   ),
   LegalSectionData(
     title: '5. Cookies & Tracking',

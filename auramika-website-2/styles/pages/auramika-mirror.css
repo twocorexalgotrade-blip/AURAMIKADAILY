@@ -1,0 +1,1070 @@
+/* ===========================================================================
+   AURAMIKA — The Aura Mirror System
+   - Plume canvas hero
+   - Mood chips
+   - Aura takeover (3-question ritual)
+   - Aura Card (personalised)
+   - Apothecary Cabinet (drawers)
+   - Goldsmith's Loupe
+   - Live Karat Ribbon
+   =========================================================================== */
+
+/* ===== Mirror Hero ===== */
+.au-mirror {
+  position: relative;
+  min-height: 100vh;
+  background: #0B0A08;
+  color: var(--auramika-paper-warm);
+  overflow: hidden;
+  isolation: isolate;
+}
+.au-mirror__plume {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(0.4px);
+}
+.au-mirror__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(11,10,8,0) 0%, rgba(11,10,8,0.6) 70%, rgba(11,10,8,0.92) 100%),
+    radial-gradient(80% 60% at 50% 100%, rgba(11,10,8,0.7), rgba(11,10,8,0) 65%);
+  z-index: 1;
+  pointer-events: none;
+}
+.au-mirror__inner {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 140px 6vw 100px;
+  text-align: center;
+}
+.au-mirror__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,252,245,0.18);
+  background: rgba(255,252,245,0.04);
+  backdrop-filter: blur(20px);
+  font-size: 11px;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255,252,245,0.8);
+}
+.au-mirror__eyebrow::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--current-aura, #E5BB55);
+  box-shadow: 0 0 12px var(--current-aura, #E5BB55);
+  animation: au-breath 2.6s ease-in-out infinite;
+}
+@keyframes au-breath {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.au-mirror__title {
+  font-family: var(--auramika-font-display);
+  font-size: clamp(80px, 18vw, 280px);
+  line-height: 0.86;
+  font-weight: 500;
+  margin: 32px 0 0;
+  letter-spacing: -0.025em;
+  position: relative;
+}
+.au-mirror__title .row {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: clamp(14px, 2vw, 36px);
+}
+.au-mirror__title .word--aura {
+  background: linear-gradient(110deg, var(--current-aura, #E5BB55), #FFFAE2 50%, var(--current-aura, #E5BB55));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: au-foil 5s linear infinite;
+  font-style: italic;
+  font-weight: 400;
+}
+.au-mirror__title .word--mika {
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(255,252,245,0.92);
+}
+.au-mirror__amp {
+  font-family: var(--auramika-font-script);
+  font-size: 0.6em;
+  display: inline-block;
+  position: relative;
+  width: 0.85em;
+  height: 0.85em;
+  color: var(--current-aura, #E5BB55);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--current-aura, #E5BB55) 60%, transparent);
+  transform: translateY(-0.06em) rotate(-4deg);
+  transition: transform 0.4s var(--auramika-ease), color 0.6s var(--auramika-ease);
+  cursor: none;
+}
+.au-mirror__amp::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--current-aura, #E5BB55) 35%, transparent), transparent 65%);
+  z-index: -1;
+  filter: blur(20px);
+  animation: au-breath 3.2s ease-in-out infinite;
+}
+
+.au-mirror__sub {
+  margin: 36px auto 0;
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255,252,245,0.65);
+  letter-spacing: 0.005em;
+}
+.au-mirror__sub em { color: var(--current-aura, #E5BB55); font-style: italic; }
+
+/* Mood chips */
+.au-moods {
+  margin-top: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 720px;
+}
+.au-mood {
+  --mood: #E5BB55;
+  position: relative;
+  padding: 14px 22px;
+  background: rgba(255,252,245,0.04);
+  border: 1px solid rgba(255,252,245,0.12);
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,252,245,0.85);
+  font-weight: 600;
+  font-family: inherit;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s var(--auramika-ease);
+  cursor: none;
+  overflow: hidden;
+}
+.au-mood::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--mood) 50%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s var(--auramika-ease);
+}
+.au-mood:hover, .au-mood.is-active {
+  border-color: color-mix(in srgb, var(--mood) 60%, transparent);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--mood) 60%, transparent);
+}
+.au-mood:hover::before, .au-mood.is-active::before { opacity: 1; }
+.au-mood span { position: relative; z-index: 1; }
+.au-mood .dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--mood);
+  margin-right: 10px;
+  box-shadow: 0 0 10px var(--mood);
+  vertical-align: 1px;
+}
+
+/* Mirror CTA */
+.au-mirror__cta-row {
+  margin-top: 56px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.au-btn--mirror {
+  padding: 20px 32px;
+  border-radius: 999px;
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  border: none;
+  cursor: none;
+  transition: transform 0.4s var(--auramika-ease), box-shadow 0.4s var(--auramika-ease), background 0.6s var(--auramika-ease);
+  box-shadow: 0 18px 50px -16px color-mix(in srgb, var(--current-aura, #E5BB55) 60%, transparent);
+}
+.au-btn--mirror:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 26px 60px -18px color-mix(in srgb, var(--current-aura, #E5BB55) 75%, transparent);
+}
+.au-btn--mirror .arrow { font-size: 16px; line-height: 1; }
+.au-btn--ghost-dark {
+  padding: 20px 28px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid rgba(255,252,245,0.25);
+  color: var(--auramika-paper-warm);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: none;
+  transition: all 0.4s var(--auramika-ease);
+}
+.au-btn--ghost-dark:hover { background: rgba(255,252,245,0.06); border-color: rgba(255,252,245,0.5); }
+
+.au-mirror__hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255,252,245,0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.au-mirror__hint::before, .au-mirror__hint::after {
+  content: "";
+  width: 36px; height: 1px;
+  background: rgba(255,252,245,0.2);
+}
+
+/* ===== Live Karat Ribbon (docked top-right) ===== */
+.au-karat {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 950;
+  background: var(--auramika-paper-warm);
+  color: var(--auramika-ink);
+  padding: 14px 18px 14px 16px;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 14px 40px -10px rgba(0,0,0,0.35);
+  min-width: 220px;
+  font-family: var(--auramika-font-sans);
+  transform-origin: top right;
+  transform: rotate(2deg);
+  transition: transform 0.4s var(--auramika-ease);
+  cursor: none;
+  border: 1px solid rgba(186,138,44,0.25);
+}
+.au-karat::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: var(--auramika-gold);
+}
+.au-karat::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0; right: 0;
+  height: 8px;
+  background-image:
+    radial-gradient(circle at 4px 0, var(--auramika-paper-warm) 4px, transparent 4.5px);
+  background-size: 8px 8px;
+  background-repeat: repeat-x;
+}
+.au-karat:hover { transform: rotate(0deg) scale(1.04); }
+.au-karat__lab {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--auramika-gold-deep); font-weight: 700;
+}
+.au-karat__lab::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: #00AA5B; box-shadow: 0 0 8px #00AA5B;
+  animation: au-breath 1.8s ease-in-out infinite;
+}
+.au-karat__rate {
+  font-family: var(--auramika-font-display);
+  font-size: 22px; font-weight: 600;
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.au-karat__rate small { font-size: 11px; font-weight: 400; opacity: 0.55; letter-spacing: 0.2em; text-transform: uppercase; }
+.au-karat__delta {
+  font-size: 11px;
+  margin-top: 4px;
+  display: flex; align-items: center; gap: 6px;
+  color: var(--auramika-success, #0DA05A);
+}
+.au-karat__delta.is-down { color: #C7263A; }
+.au-karat__cart {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(186,138,44,0.3);
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(11,10,8,0.55);
+}
+.au-karat__cart strong { display: block; font-family: var(--auramika-font-display); font-size: 16px; color: var(--auramika-ink); margin-top: 2px; letter-spacing: -0.01em; text-transform: none; font-weight: 600; }
+@media (max-width: 720px) {
+  .au-karat { top: 70px; right: 8px; min-width: 180px; padding: 10px 12px; transform: scale(0.85) rotate(2deg); }
+}
+
+/* ===== Aura Takeover (3-question ritual) ===== */
+.au-takeover {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(11,10,8,0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vw;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s var(--auramika-ease);
+}
+.au-takeover.is-open { opacity: 1; pointer-events: auto; }
+.au-takeover__close {
+  position: absolute;
+  top: 24px; right: 24px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,252,245,0.2);
+  color: var(--auramika-paper-warm);
+  font-size: 18px;
+  display: grid; place-items: center;
+  cursor: none;
+  background: transparent;
+  transition: all 0.3s var(--auramika-ease);
+}
+.au-takeover__close:hover { background: rgba(255,252,245,0.08); border-color: rgba(255,252,245,0.5); }
+
+.au-takeover__rail {
+  position: absolute;
+  top: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 50px;
+  font-size: 10px; letter-spacing: 0.4em; text-transform: uppercase;
+  color: rgba(255,252,245,0.4);
+  font-weight: 600;
+}
+.au-takeover__rail span { position: relative; padding-bottom: 14px; }
+.au-takeover__rail span.is-active { color: var(--auramika-paper-warm); }
+.au-takeover__rail span.is-active::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px; background: var(--current-aura, #E5BB55);
+}
+
+.au-step {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  display: none;
+}
+.au-step.is-active { display: block; animation: au-step-in 0.7s var(--auramika-ease) both; }
+@keyframes au-step-in {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: none; }
+}
+.au-step__num {
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  color: var(--current-aura, #E5BB55);
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.au-step__q {
+  font-family: var(--auramika-font-display);
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 500;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  color: var(--auramika-paper-warm);
+  letter-spacing: -0.01em;
+}
+.au-step__sub {
+  font-size: 14px;
+  color: rgba(255,252,245,0.55);
+  letter-spacing: 0.1em;
+  margin-bottom: 48px;
+}
+
+/* Step 1: weight chips */
+.au-weights {
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+}
+.au-weights button {
+  padding: 22px 28px;
+  background: rgba(255,252,245,0.04);
+  border: 1px solid rgba(255,252,245,0.12);
+  border-radius: 999px;
+  color: var(--auramika-paper-warm);
+  font-family: inherit;
+  cursor: none;
+  transition: all 0.4s var(--auramika-ease);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  min-width: 120px;
+}
+.au-weights button .glyph { font-size: 28px; line-height: 1; }
+.au-weights button .name { font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 600; }
+.au-weights button:hover, .au-weights button.is-active {
+  border-color: var(--current-aura, #E5BB55);
+  background: color-mix(in srgb, var(--current-aura, #E5BB55) 10%, transparent);
+  transform: translateY(-3px);
+}
+
+/* Step 2: skin colour swatches */
+.au-skins {
+  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  max-width: 600px; margin: 0 auto;
+}
+.au-skin {
+  --tone: #C9A878;
+  width: 90px; height: 120px;
+  border-radius: 50% 50% 18px 18px / 60% 60% 18px 18px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 110%, white 10%), var(--tone), color-mix(in srgb, var(--tone) 80%, black 10%));
+  border: 1px solid rgba(255,252,245,0.1);
+  cursor: none;
+  position: relative;
+  transition: transform 0.4s var(--auramika-ease), box-shadow 0.4s var(--auramika-ease);
+  box-shadow: 0 14px 30px -12px rgba(0,0,0,0.6);
+}
+.au-skin::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: -28px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: rgba(255,252,245,0.5);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.au-skin:hover, .au-skin.is-active {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 22px 40px -10px var(--tone);
+}
+.au-skin.is-active { outline: 2px solid var(--current-aura, #E5BB55); outline-offset: 4px; }
+
+/* Step 3: name input */
+.au-name {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,252,245,0.2);
+  color: var(--auramika-paper-warm);
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: clamp(28px, 4vw, 44px);
+  text-align: center;
+  padding: 16px 0;
+  outline: none;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.au-name::placeholder { color: rgba(255,252,245,0.25); }
+.au-name:focus { border-bottom-color: var(--current-aura, #E5BB55); }
+.au-name-hint { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,252,245,0.4); margin-top: 18px; }
+
+/* Step controls */
+.au-step__nav {
+  margin-top: 56px;
+  display: flex; gap: 14px; justify-content: center;
+}
+.au-step__nav button {
+  padding: 16px 28px;
+  border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+  font-weight: 700;
+  cursor: none;
+  transition: all 0.4s var(--auramika-ease);
+  font-family: inherit;
+}
+.au-step__nav .next {
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  border: none;
+}
+.au-step__nav .next:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--current-aura, #E5BB55) 70%, transparent); }
+.au-step__nav .back {
+  background: transparent;
+  color: rgba(255,252,245,0.6);
+  border: 1px solid rgba(255,252,245,0.18);
+}
+.au-step__nav .back:hover { color: #fff; border-color: rgba(255,252,245,0.5); }
+
+/* ===== Aura Card (output reveal) ===== */
+.au-card-reveal {
+  display: none;
+  width: 100%;
+  max-width: 1100px;
+  text-align: center;
+}
+.au-card-reveal.is-active { display: block; animation: au-step-in 1s var(--auramika-ease) both; }
+.au-card-reveal__title {
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--current-aura, #E5BB55);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+.au-card-reveal__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 56px;
+  align-items: center;
+  text-align: left;
+}
+.au-card-paper {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(160deg, #FFFCF5 0%, #F2EBDB 60%, #E8DCC0 100%);
+  border-radius: 18px;
+  padding: 38px 36px;
+  color: var(--auramika-ink);
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(186,138,44,0.2) inset;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.au-card-paper::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(186,138,44,0.35);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.au-card-paper__head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--auramika-gold-deep); font-weight: 700;
+}
+.au-card-paper__seal {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  display: grid; place-items: center;
+  font-family: var(--auramika-font-display);
+  font-size: 14px; font-weight: 700;
+  font-style: italic;
+}
+.au-card-paper__name {
+  font-family: var(--auramika-font-script);
+  font-size: 64px;
+  line-height: 1;
+  margin: 28px 0 8px;
+  color: var(--auramika-ink);
+  font-weight: 400;
+}
+.au-card-paper__no {
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--auramika-gold-deep);
+  letter-spacing: 0.2em;
+}
+.au-card-paper__recipe {
+  margin-top: 22px;
+  border-top: 1px dashed rgba(186,138,44,0.4);
+  border-bottom: 1px dashed rgba(186,138,44,0.4);
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.au-card-paper__recipe .row {
+  display: flex; justify-content: space-between;
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.au-card-paper__recipe .row .k { color: var(--auramika-gold-deep); font-weight: 600; }
+.au-card-paper__recipe .row .v { font-weight: 700; }
+.au-card-paper__quote {
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.45;
+  margin-top: 18px;
+  color: rgba(11,10,8,0.78);
+  flex: 1;
+}
+.au-card-paper__foot {
+  margin-top: auto;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--auramika-gold-deep); font-weight: 600;
+  padding-top: 14px;
+}
+.au-card-paper__chip {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--current-aura, #E5BB55);
+  position: absolute;
+  bottom: 26px; right: 26px;
+  display: grid; place-items: center;
+  font-family: var(--auramika-font-display);
+  font-style: italic; font-size: 24px; color: #0B0A08; font-weight: 600;
+  box-shadow: 0 0 0 4px rgba(255,252,245,0.4), 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.au-card-reveal__copy h2 {
+  font-family: var(--auramika-font-display);
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 500;
+  line-height: 1.06;
+  margin: 0 0 20px;
+  color: var(--auramika-paper-warm);
+  letter-spacing: -0.01em;
+}
+.au-card-reveal__copy h2 em { font-style: italic; color: var(--current-aura, #E5BB55); }
+.au-card-reveal__copy p {
+  font-size: 15px; line-height: 1.7; color: rgba(255,252,245,0.65); max-width: 460px;
+}
+.au-card-reveal__pieces {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.au-card-reveal__piece {
+  aspect-ratio: 1; border-radius: 14px; overflow: hidden;
+  position: relative;
+  background: rgba(255,252,245,0.04);
+  border: 1px solid rgba(255,252,245,0.08);
+}
+.au-card-reveal__piece img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--auramika-ease); }
+.au-card-reveal__piece:hover img { transform: scale(1.1); }
+.au-card-reveal__actions {
+  margin-top: 36px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.au-card-reveal__actions button {
+  padding: 16px 24px;
+  border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 700;
+  cursor: none; transition: all 0.4s var(--auramika-ease); border: none; font-family: inherit;
+}
+.au-card-reveal__actions .primary {
+  background: var(--current-aura, #E5BB55); color: #0B0A08;
+}
+.au-card-reveal__actions .ghost {
+  background: transparent; color: var(--auramika-paper-warm); border: 1px solid rgba(255,252,245,0.25);
+}
+.au-card-reveal__actions button:hover { transform: translateY(-2px); }
+@media (max-width: 900px) {
+  .au-card-reveal__grid { grid-template-columns: 1fr; gap: 30px; }
+  .au-card-paper { max-width: 420px; margin: 0 auto; }
+}
+
+/* ===== Apothecary Cabinet (drawer ecom) ===== */
+.au-cabinet {
+  background: linear-gradient(180deg, #1A130A 0%, #0F0B05 100%);
+  color: var(--auramika-paper-warm);
+  padding: clamp(80px, 12vw, 160px) 0;
+  position: relative;
+  overflow: hidden;
+}
+.au-cabinet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 50% at 50% 0%, rgba(229,187,85,0.08), transparent 60%);
+  pointer-events: none;
+}
+.au-cabinet__head {
+  text-align: center;
+  margin-bottom: 56px;
+  padding: 0 6vw;
+  position: relative;
+}
+.au-cabinet__head h2 {
+  font-family: var(--auramika-font-display);
+  font-size: clamp(40px, 6vw, 80px);
+  font-weight: 500;
+  margin: 12px 0 0;
+  letter-spacing: -0.01em;
+}
+.au-cabinet__head h2 em { font-style: italic; color: var(--current-aura, #E5BB55); }
+.au-cabinet__head .au-eyebrow { color: var(--current-aura, #E5BB55); }
+.au-cabinet__head .au-eyebrow::before { background: var(--current-aura, #E5BB55); }
+
+.au-cabinet__frame {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 28px;
+  background:
+    linear-gradient(180deg, #2A1F0F 0%, #1F1709 100%),
+    repeating-linear-gradient(90deg, rgba(255,252,245,0.02) 0 2px, transparent 2px 6px);
+  border-radius: 20px;
+  border: 1px solid rgba(229,187,85,0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,252,245,0.06),
+    inset 0 -40px 60px rgba(0,0,0,0.4),
+    0 60px 120px -30px rgba(0,0,0,0.7);
+  position: relative;
+}
+.au-cabinet__frame::before {
+  content: "";
+  position: absolute;
+  top: -12px; left: 50%; transform: translateX(-50%);
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  padding: 6px 20px;
+  border-radius: 999px;
+  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 700;
+  content: "Apothecary";
+}
+
+.au-drawer {
+  position: relative;
+  border-bottom: 1px solid rgba(255,252,245,0.06);
+}
+.au-drawer:last-child { border-bottom: none; }
+.au-drawer__handle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 60px 1fr auto auto;
+  align-items: center;
+  gap: 28px;
+  padding: 26px 24px;
+  background: linear-gradient(180deg, rgba(255,252,245,0.02), transparent);
+  border: none;
+  color: inherit;
+  cursor: none;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.4s var(--auramika-ease);
+  position: relative;
+}
+.au-drawer__handle::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px; height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--current-aura, #E5BB55) 75%, #6B4E00) 0%, #6B4E00 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 color-mix(in srgb, var(--current-aura, #E5BB55) 70%, white 5%);
+  pointer-events: none;
+}
+.au-drawer__handle:hover { background: rgba(255,252,245,0.04); }
+.au-drawer__num {
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--current-aura, #E5BB55);
+  font-weight: 500;
+  width: 60px;
+  letter-spacing: 0.05em;
+}
+.au-drawer__name {
+  font-family: var(--auramika-font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.au-drawer__hint {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255,252,245,0.4);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.au-drawer__count {
+  font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: rgba(255,252,245,0.55); font-weight: 600;
+}
+.au-drawer__chevron {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,252,245,0.2);
+  display: grid; place-items: center;
+  font-size: 14px;
+  transition: transform 0.6s var(--auramika-ease);
+}
+.au-drawer.is-open .au-drawer__chevron { transform: rotate(45deg); border-color: var(--current-aura, #E5BB55); color: var(--current-aura, #E5BB55); }
+
+.au-drawer__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.8s var(--auramika-ease);
+}
+.au-drawer.is-open .au-drawer__body { max-height: 1200px; }
+.au-drawer__inner {
+  padding: 28px 24px 40px;
+  background:
+    linear-gradient(180deg, #0A0703 0%, #120D06 100%);
+  border-top: 1px solid rgba(0,0,0,0.4);
+  box-shadow: inset 0 8px 16px -6px rgba(0,0,0,0.6);
+  position: relative;
+}
+.au-drawer__inner::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+}
+.au-drawer__shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+.au-piece {
+  position: relative;
+  background: rgba(255,252,245,0.03);
+  border: 1px solid rgba(255,252,245,0.06);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: none;
+  transition: transform 0.5s var(--auramika-ease), border-color 0.4s, box-shadow 0.5s;
+  transform-origin: top center;
+  animation: au-piece-sway 6s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.au-drawer.is-open .au-piece { animation-play-state: running; }
+.au-piece:nth-child(2n) { animation-delay: -2s; }
+.au-piece:nth-child(3n) { animation-delay: -4s; }
+@keyframes au-piece-sway {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50% { transform: rotate(1.2deg); }
+}
+.au-piece::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 1px; height: 14px;
+  background: linear-gradient(180deg, var(--current-aura, #E5BB55), transparent);
+  z-index: 2;
+}
+.au-piece:hover {
+  transform: translateY(-6px) rotate(0) !important;
+  border-color: var(--current-aura, #E5BB55);
+  box-shadow: 0 24px 40px -16px color-mix(in srgb, var(--current-aura, #E5BB55) 40%, transparent);
+  animation-play-state: paused;
+}
+.au-piece__media {
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1a1410;
+}
+.au-piece__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--auramika-ease); }
+.au-piece:hover .au-piece__media img { transform: scale(1.08); }
+.au-piece__loupe {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.au-piece:hover .au-piece__loupe { opacity: 1; }
+.au-piece__body {
+  padding: 14px 16px 16px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 10px;
+}
+.au-piece__body h4 {
+  font-family: var(--auramika-font-display);
+  font-size: 15px; font-weight: 500;
+  margin: 0; letter-spacing: -0.005em;
+  color: var(--auramika-paper-warm);
+}
+.au-piece__body .meta {
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,252,245,0.5); font-weight: 600; margin-bottom: 4px;
+}
+.au-piece__body .price {
+  font-family: var(--auramika-font-display);
+  font-size: 13px; font-weight: 600;
+  color: var(--current-aura, #E5BB55);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.au-piece__add {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(11,10,8,0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,252,245,0.15);
+  color: var(--auramika-paper-warm);
+  display: grid; place-items: center;
+  font-size: 14px; font-weight: 600;
+  cursor: none;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.3s var(--auramika-ease);
+}
+.au-piece:hover .au-piece__add { opacity: 1; transform: translateY(0); }
+.au-piece__add:hover { background: var(--current-aura, #E5BB55); color: #0B0A08; border-color: var(--current-aura, #E5BB55); transform: scale(1.1); }
+.au-piece__add.is-added { background: var(--current-aura, #E5BB55); color: #0B0A08; opacity: 1; transform: translateY(0); }
+
+/* ===== Goldsmith's Loupe ===== */
+.au-loupe {
+  position: fixed;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  border: 4px solid #FFFCF5;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 30px 60px rgba(0,0,0,0.5),
+    inset 0 0 0 1px rgba(186,138,44,0.6),
+    inset 0 0 60px rgba(0,0,0,0.4);
+  background-repeat: no-repeat;
+  background-size: 600% 600%;
+  opacity: 0;
+  transform: translate3d(-50%, -50%, 0) scale(0.7);
+  transition: opacity 0.3s var(--auramika-ease), transform 0.3s var(--auramika-ease);
+  overflow: hidden;
+}
+.au-loupe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.15), transparent 35%),
+    conic-gradient(from 0deg, rgba(229,187,85,0.0) 0deg, rgba(229,187,85,0.15) 90deg, rgba(229,187,85,0) 180deg, rgba(229,187,85,0.15) 270deg, rgba(229,187,85,0) 360deg);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.au-loupe::after {
+  content: attr(data-karat);
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--auramika-gold-bright);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  font-weight: 600;
+}
+.au-loupe.is-active { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); }
+@media (max-width: 900px) { .au-loupe { display: none; } }
+
+/* ===== Floating Aura Card chip (after quiz, persists) ===== */
+.au-aura-chip {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 950;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: rgba(11,10,8,0.85);
+  backdrop-filter: blur(20px);
+  color: var(--auramika-paper-warm);
+  padding: 12px 18px 12px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,252,245,0.15);
+  box-shadow: 0 14px 40px -10px rgba(0,0,0,0.5);
+  cursor: none;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: transform 0.4s var(--auramika-ease);
+}
+.au-aura-chip.is-shown { display: flex; }
+.au-aura-chip:hover { transform: translateY(-3px); }
+.au-aura-chip .seal {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  display: grid; place-items: center;
+  font-family: var(--auramika-font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 14px;
+}
+.au-aura-chip .meta { display: flex; flex-direction: column; gap: 2px; }
+.au-aura-chip .meta small { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.5; }
+.au-aura-chip .meta strong { font-family: var(--auramika-font-display); font-style: italic; font-weight: 500; font-size: 14px; }
+
+/* ===== Toast for cart ===== */
+.au-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  z-index: 11500;
+  background: var(--current-aura, #E5BB55);
+  color: #0B0A08;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: 0 18px 40px -10px color-mix(in srgb, var(--current-aura, #E5BB55) 70%, transparent);
+  opacity: 0;
+  transition: all 0.5s var(--auramika-ease);
+  display: flex; align-items: center; gap: 10px;
+}
+.au-toast.is-shown { opacity: 1; transform: translateX(-50%) translateY(0); }
+.au-toast .check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #0B0A08;
+  color: var(--current-aura, #E5BB55);
+  display: grid; place-items: center;
+  font-size: 11px;
+}
+
+/* ===== Skip-link CTA in hero ===== */
+.au-mirror__skip {
+  margin-top: 28px;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255,252,245,0.4);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: none;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-weight: 600;
+}
+.au-mirror__skip:hover { color: var(--current-aura, #E5BB55); }

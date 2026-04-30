@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Aura — Auramika</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Allura&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/variables.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-landing.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-mirror.css" />
+  <link rel="stylesheet" href="styles/pages/auramika-pages.css" />
+</head>
+<body class="auramika-body" data-page="profile">
+  <main class="au-page">
+    <header class="au-page-head">
+      <div class="au-page-head__crumbs"><a href="index.html">House</a><span>·</span>Your Aura</div>
+      <div class="au-page-head__row">
+        <div>
+          <h1>Your <em>House</em></h1>
+          <p>Your aura, your pieces, your jewellers — kept here. Re-mirror anytime to refresh your recipe.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="au-profile">
+      <aside class="au-profile__side">
+        <div class="au-profile__avatar" id="profSeal">A</div>
+        <h2 class="au-profile__name" id="profName">Aanya R.</h2>
+        <div class="au-profile__sub" id="profMood">Devotion · Aura 042</div>
+        <nav class="au-profile__menu">
+          <a class="is-active" data-cursor="View">Overview <span>›</span></a>
+          <a href="cart.html" data-cursor="Open">Naam Karan <span>›</span></a>
+          <a href="wishlist.html" data-cursor="Open">Held Pieces <span>›</span></a>
+          <a href="#" data-cursor="View">Orders <span>›</span></a>
+          <a href="index.html#mirror" data-cursor="Mirror">Re-mirror My Aura <span>›</span></a>
+          <a href="#" data-cursor="View">Addresses <span>›</span></a>
+          <a href="#" onclick="event.preventDefault(); localStorage.removeItem('auramika.aura.v1'); localStorage.removeItem('auramika.cart.v1'); location.href='index.html';" data-cursor="Out">Sign Out <span>›</span></a>
+        </nav>
+      </aside>
+
+      <div class="au-profile__main">
+        <div class="au-profile__panel">
+          <h3>Today's House</h3>
+          <div class="au-stat-grid">
+            <div class="au-stat"><div class="k">Held</div><div class="v" id="profWl">3</div></div>
+            <div class="au-stat"><div class="k">In Apothecary</div><div class="v" id="profCart">0</div></div>
+            <div class="au-stat"><div class="k">Orders</div><div class="v"><em>2</em></div></div>
+          </div>
+        </div>
+
+        <div class="au-profile__panel">
+          <h3>Recent Orders</h3>
+          <div style="display: grid; gap: 16px;">
+            <div style="display: grid; grid-template-columns: 80px 1fr auto; gap: 18px; align-items: center; padding: 16px; border: 1px solid var(--auramika-line); border-radius: 18px;">
+              <img src="assets/images/Pendant1.4.jpg" alt="" style="width:80px; height:80px; object-fit:cover; border-radius: 12px;">
+              <div>
+                <div style="font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:rgba(11,10,8,0.55); font-weight:600;">Order · ARM-2046</div>
+                <div style="font-family: var(--auramika-font-display); font-size:18px; margin-top:4px;">Devika · Polki Set</div>
+              </div>
+              <span style="font-size:11px; letter-spacing:0.25em; text-transform:uppercase; color: var(--auramika-success); font-weight:700;">Delivered</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 80px 1fr auto; gap: 18px; align-items: center; padding: 16px; border: 1px solid var(--auramika-line); border-radius: 18px;">
+              <img src="assets/images/earring1.jpg" alt="" style="width:80px; height:80px; object-fit:cover; border-radius: 12px;">
+              <div>
+                <div style="font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:rgba(11,10,8,0.55); font-weight:600;">Order · ARM-2055</div>
+                <div style="font-family: var(--auramika-font-display); font-size:18px; margin-top:4px;">Tara · Drop</div>
+              </div>
+              <span style="font-size:11px; letter-spacing:0.25em; text-transform:uppercase; color: var(--auramika-gold-deep); font-weight:700;">In Atelier</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="au-profile__panel" style="background: var(--auramika-cream-grad);">
+          <h3>Your Aura Card</h3>
+          <p style="margin: 0 0 16px; color: rgba(11,10,8,0.65);">Re-mirror anytime to update your recipe. Your old cards live in your house archive.</p>
+          <a href="index.html#mirror" class="au-btn au-btn--primary" style="display:inline-flex; text-decoration:none;" data-cursor="Mirror"><span>Open the Mirror</span><span class="arrow">→</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/au-shell.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      let aura = {};
+      try { aura = JSON.parse(localStorage.getItem('auramika.aura.v1') || '{}'); } catch (e) {}
+      if (aura.name) {
+        document.getElementById('profName').textContent = aura.name;
+        document.getElementById('profSeal').textContent = (aura.name||'A').charAt(0).toUpperCase();
+        document.getElementById('profMood').textContent = `${aura.mood || 'Devotion'} · Aura ${String(aura.serial || 42).padStart(3,'0')}`;
+      }
+      const cart = window.AURA?.getCart() || [];
+      document.getElementById('profCart').textContent = cart.length;
+    });
+  </script>
+</body>
+</html>

@@ -1,8 +1,21 @@
 # Large binaries
 *.zip
+flutter_macos_arm64_*.zip
 # Next.js build
 .next/
 node_modules/
 # Claude local config
 .claude/
 SKILL.md
+# macOS junk
+.DS_Store
+**/.DS_Store
+# Flutter build / generated
+auramika/build/
+auramika/.dart_tool/
+auramika/.flutter-plugins
+auramika/.flutter-plugins-dependencies
+# Python venv
+.venv/
+# Misc
+godskill.md
