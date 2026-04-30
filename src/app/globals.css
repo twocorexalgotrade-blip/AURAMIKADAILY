@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #2A0845;
+  /* Deep Royal Purple */
+  --color-brand-light: #FFFFFF;
+  /* Pure White */
+  --color-brand-accent: #9333EA;
+  /* Vibrant Purple */
+  --color-brand-muted: #D8B4FE;
+  /* Muted/Soft Purple */
+}
+
+:root {
+  --background: var(--color-brand-light);
+  --foreground: var(--color-brand-dark);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+}
