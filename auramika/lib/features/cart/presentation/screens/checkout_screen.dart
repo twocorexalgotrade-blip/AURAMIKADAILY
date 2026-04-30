@@ -283,6 +283,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         _pendingImageAsset  = firstItem?.imageUrl;
         _pendingDate        = dateStr;
 
+        // Mock mode: backend already confirmed the order — skip the SDK.
+        if (result.isMock) {
+          _finalizeOrder(result.orderId, productName, result.total,
+              cart.totalItems, firstItem?.imageUrl, dateStr);
+          return;
+        }
+
         final session = CFSessionBuilder()
             .setEnvironment((AppConstants.cashfreeTestMode || result.isTestMode) ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION)
             .setPaymentSessionId(result.sessionId)

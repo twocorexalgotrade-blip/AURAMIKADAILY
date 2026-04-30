@@ -28,6 +28,19 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
   const order = orderRes.rows[0];
   if (order.user_uid !== req.uid) throw new AppError(403, 'Forbidden');
 
+  // Mock mode: skip Cashfree entirely, confirm the order immediately.
+  if (env.cashfree.mock) {
+    const mockCfId = `MOCK${orderId.replace(/-/g, '').slice(0, 16)}`;
+    await pool.query(
+      "UPDATE orders SET cashfree_order_id = $1, status = 'confirmed', updated_at = NOW() WHERE id = $2",
+      [mockCfId, orderId],
+    );
+    await pool.query('DELETE FROM cart_items WHERE user_uid = $1', [req.uid]);
+    console.log('[Cashfree] Mock mode — order confirmed without payment:', orderId);
+    res.json({ paymentSessionId: mockCfId, cashfreeOrderId: mockCfId, mode: 'MOCK', isMock: true });
+    return;
+  }
+
   const phone = customerPhone.replace(/\D/g, '');
   const phone10 = phone.length > 10 ? phone.slice(-10) : phone;
   // Cashfree: alphanumeric only, max 50 chars.

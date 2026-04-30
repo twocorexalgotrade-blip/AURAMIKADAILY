@@ -38,9 +38,10 @@ export const env = {
   firebase: resolveFirebaseCredentials(),
 
   cashfree: {
-    appId: required('CASHFREE_APP_ID'),
-    secretKey: required('CASHFREE_SECRET_KEY'),
+    appId: process.env['CASHFREE_APP_ID'] ?? '',
+    secretKey: process.env['CASHFREE_SECRET_KEY'] ?? '',
     env: (process.env['CASHFREE_ENV'] ?? 'TEST') as 'TEST' | 'PROD',
+    mock: process.env['CASHFREE_MOCK'] === 'true',
     get baseUrl() {
       return this.env === 'PROD'
         ? 'https://api.cashfree.com/pg'

@@ -7,12 +7,14 @@ class PaymentSessionResult {
   final String sessionId;
   final double total;
   final bool isTestMode;
+  final bool isMock;
 
   const PaymentSessionResult({
     required this.orderId,
     required this.sessionId,
     required this.total,
     required this.isTestMode,
+    this.isMock = false,
   });
 }
 
@@ -29,7 +31,8 @@ class CashfreeService {
   }
 
   /// Creates a backend order and returns a Cashfree payment session.
-  /// The backend is the source of truth for the order amount.
+  /// When the backend is in mock mode (CASHFREE_MOCK=true), isMock is true
+  /// and the caller should skip the Cashfree SDK entirely.
   Future<PaymentSessionResult> createOrderAndGetSession({
     required List<Map<String, dynamic>> items,
     required Map<String, String> address,
@@ -68,8 +71,11 @@ class CashfreeService {
       options: Options(headers: authHeaders),
     );
 
-    final sessionId = paymentRes.data['paymentSessionId'] as String?;
-    if (sessionId == null) throw Exception('No payment session ID returned from server.');
+    final isMock = paymentRes.data['isMock'] as bool? ?? false;
+    final sessionId = paymentRes.data['paymentSessionId'] as String? ?? '';
+    if (!isMock && sessionId.isEmpty) {
+      throw Exception('No payment session ID returned from server.');
+    }
 
     final isTestMode = (paymentRes.data['mode'] as String?) != 'PROD';
 
@@ -78,6 +84,7 @@ class CashfreeService {
       sessionId: sessionId,
       total: total,
       isTestMode: isTestMode,
+      isMock: isMock,
     );
   }
 }
