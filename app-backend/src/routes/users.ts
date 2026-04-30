@@ -36,13 +36,16 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) 
   res.json({ ...userRes.rows[0], addresses: addrRes.rows });
 });
 
+const ALLOWED_PROFILE_COLUMNS = ['name', 'email', 'dob', 'image_path'] as const;
+type ProfileColumn = typeof ALLOWED_PROFILE_COLUMNS[number];
+
 // PATCH /users/me
 router.patch('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const parsed = ProfileUpdateSchema.safeParse(req.body);
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
 
   const updates = parsed.data;
-  const fields = Object.keys(updates);
+  const fields = (Object.keys(updates) as ProfileColumn[]).filter(k => ALLOWED_PROFILE_COLUMNS.includes(k));
   if (fields.length === 0) { res.json({ updated: false }); return; }
 
   const setClauses = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');

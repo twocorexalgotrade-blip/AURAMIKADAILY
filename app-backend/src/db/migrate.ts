@@ -123,6 +123,27 @@ export async function runMigrations() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS stylist_usage (
+      user_uid  TEXT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+      day       DATE NOT NULL DEFAULT CURRENT_DATE,
+      requests  INT  NOT NULL DEFAULT 0,
+      PRIMARY KEY (user_uid, day)
+    );
   `);
+
+  // Hot-path indexes — idempotent (IF NOT EXISTS)
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_orders_user_uid          ON orders(user_uid);
+    CREATE INDEX IF NOT EXISTS idx_orders_cashfree_order_id ON orders(cashfree_order_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id     ON order_items(order_id);
+    CREATE INDEX IF NOT EXISTS idx_cart_items_user_uid      ON cart_items(user_uid);
+    CREATE INDEX IF NOT EXISTS idx_wishlist_user_uid        ON wishlist_items(user_uid);
+    CREATE INDEX IF NOT EXISTS idx_addresses_user_uid       ON addresses(user_uid);
+    CREATE INDEX IF NOT EXISTS idx_products_category        ON products(category);
+    CREATE INDEX IF NOT EXISTS idx_products_vibe            ON products(vibe);
+    CREATE INDEX IF NOT EXISTS idx_products_in_stock        ON products(in_stock, created_at DESC);
+  `);
+
   console.log('[DB] Migrations complete');
 }

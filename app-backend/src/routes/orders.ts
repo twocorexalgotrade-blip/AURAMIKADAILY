@@ -125,11 +125,14 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
   res.status(201).json({ orderId, total });
 });
 
-// GET /orders
+// GET /orders?limit=20&offset=0
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const limit = Math.min(50, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
+  const offset = Math.max(0, parseInt(String(req.query['offset'] ?? '0'), 10) || 0);
+
   const ordersRes = await pool.query(
-    'SELECT * FROM orders WHERE user_uid = $1 ORDER BY created_at DESC LIMIT 50',
-    [req.uid],
+    'SELECT * FROM orders WHERE user_uid = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+    [req.uid, limit, offset],
   );
 
   const orders = await Promise.all(ordersRes.rows.map(async (order) => {
@@ -137,7 +140,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
     return { ...order, items: itemsRes.rows };
   }));
 
-  res.json({ orders });
+  res.json({ orders, limit, offset });
 });
 
 // GET /orders/:id

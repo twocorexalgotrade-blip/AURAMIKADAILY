@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
 import { env } from '../config/env';
+import { pool } from '../config/db';
 
 const router = Router();
 
@@ -23,11 +24,27 @@ available on AURAMIKA: Old Money, Street Wear, Minimal Chic, Boho Goddess, Brida
 Be warm, stylish, and knowledgeable about Indian jewellery traditions and modern trends.`;
 
 // POST /stylist/chat
+const DAILY_REQUEST_LIMIT = 20;
+
 router.post('/chat', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   if (!env.openai.apiKey) throw new AppError(503, 'AI Stylist is not configured');
 
   const parsed = StylistSchema.safeParse(req.body);
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
+
+  // Upsert daily usage counter; reject if limit already reached.
+  const usageRes = await pool.query<{ requests: number }>(
+    `INSERT INTO stylist_usage (user_uid, day, requests)
+     VALUES ($1, CURRENT_DATE, 1)
+     ON CONFLICT (user_uid, day) DO UPDATE
+       SET requests = stylist_usage.requests + 1
+     RETURNING requests`,
+    [req.uid],
+  );
+  const todayCount = usageRes.rows[0]?.requests ?? 1;
+  if (todayCount > DAILY_REQUEST_LIMIT) {
+    throw new AppError(429, `Daily AI stylist limit reached (${DAILY_REQUEST_LIMIT}/day). Try again tomorrow.`);
+  }
 
   const { message, conversationHistory = [] } = parsed.data;
   const messages = [
@@ -36,7 +53,7 @@ router.post('/chat', requireAuth, async (req: AuthenticatedRequest, res: Respons
   ];
 
   const reply = await openAIChat(messages);
-  res.json({ reply });
+  res.json({ reply, remainingToday: Math.max(0, DAILY_REQUEST_LIMIT - todayCount) });
 });
 
 function openAIChat(
