@@ -22,11 +22,16 @@ abstract class AppConstants {
   static const List<String> materialTypes = ['All', 'Brass', 'Copper'];
 
   // ── Website URLs ─────────────────────────────────────────────────────────
-  static const String websiteBase       = 'https://auramikadaily.com';
-  static const String urlPrivacyPolicy  = 'https://auramikadaily.com/privacy.html';
-  static const String urlTerms          = 'https://auramikadaily.com/terms.html';
-  static const String urlRefundPolicy   = 'https://auramikadaily.com/returns';
-  static const String urlShippingPolicy = 'https://auramikadaily.com/shipping-policy';
+  // Routes are clean Next.js paths (no .html). Served by AURAMIKADAILY-web
+  // (Next.js) at https://auramikadaily.com.
+  static const String websiteBase         = 'https://auramikadaily.com';
+  static const String urlPrivacyPolicy    = 'https://auramikadaily.com/privacy';
+  static const String urlTerms            = 'https://auramikadaily.com/terms';
+  static const String urlRefundPolicy     = 'https://auramikadaily.com/returns';
+  static const String urlShippingPolicy   = 'https://auramikadaily.com/shipping-policy';
+  static const String urlAccountDeletion  = 'https://auramikadaily.com/account-deletion';
+  static const String urlContact          = 'https://auramikadaily.com/contact';
+  static const String urlFaqs             = 'https://auramikadaily.com/faqs';
 
   // ── Cashfree ──────────────────────────────────────────────────────────────
   // Set to true to force Cashfree sandbox (test) mode regardless of backend.
