@@ -30,7 +30,9 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
 
   const phone = customerPhone.replace(/\D/g, '');
   const phone10 = phone.length > 10 ? phone.slice(-10) : phone;
-  const cfOrderId = `AUR_${orderId}_${Date.now()}`;
+  // Cashfree: alphanumeric only, max 50 chars.
+  // Strip UUID hyphens, take first 20 hex chars + 10-digit epoch suffix = 33 chars total.
+  const cfOrderId = `AUR${orderId.replace(/-/g, '').slice(0, 20)}${Date.now().toString().slice(-10)}`;
 
   const payload = JSON.stringify({
     order_id: cfOrderId,
