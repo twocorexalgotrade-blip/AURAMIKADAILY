@@ -53,4 +53,6 @@ export const env = {
   },
 
   adminUids: (process.env['ADMIN_UIDS'] ?? '').split(',').filter(Boolean),
+
+  databaseUrl: required('DATABASE_URL'),
 } as const;

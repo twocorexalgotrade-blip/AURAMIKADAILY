@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { db } from '../config/firebase';
+import { pool } from '../config/db';
 import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
@@ -11,29 +11,26 @@ const router = Router();
 router.post('/validate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
 
-  const snap = await db.collection('giftCards').doc(code).get();
-  if (!snap.exists) throw new AppError(404, 'Gift card not found');
+  const result = await pool.query('SELECT * FROM gift_cards WHERE code = $1', [code]);
+  if (result.rows.length === 0) throw new AppError(404, 'Gift card not found');
 
-  const gc = snap.data()!;
-  if (gc['status'] !== 'active') throw new AppError(400, `Gift card is ${gc['status'] as string}`);
-
-  const expiresAt = gc['expiresAt'] as FirebaseFirestore.Timestamp | null;
-  if (expiresAt && expiresAt.toDate() < new Date()) {
-    await snap.ref.update({ status: 'expired' });
+  const gc = result.rows[0];
+  if (gc.status !== 'active') throw new AppError(400, `Gift card is ${gc.status as string}`);
+  if (gc.expires_at && new Date(gc.expires_at as string) < new Date()) {
+    await pool.query("UPDATE gift_cards SET status = 'expired' WHERE code = $1", [code]);
     throw new AppError(400, 'Gift card has expired');
   }
 
-  res.json({ code, remainingAmount: gc['remainingAmount'], status: gc['status'] });
+  res.json({ code, remainingAmount: gc.remaining_amount, status: gc.status });
 });
 
 // GET /gift-cards/mine
 router.get('/mine', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const snap = await db.collection('giftCards')
-    .where('ownerId', '==', req.uid)
-    .orderBy('createdAt', 'desc')
-    .get();
-
-  res.json({ giftCards: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+  const result = await pool.query(
+    'SELECT * FROM gift_cards WHERE owner_uid = $1 ORDER BY created_at DESC',
+    [req.uid],
+  );
+  res.json({ giftCards: result.rows });
 });
 
 export default router;

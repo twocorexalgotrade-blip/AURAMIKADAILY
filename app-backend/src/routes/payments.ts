@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import https from 'https';
-import admin from 'firebase-admin';
-import { db } from '../config/firebase';
+import { pool } from '../config/db';
 import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
@@ -24,10 +23,10 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
 
   const { orderId, customerName, customerPhone, customerEmail } = parsed.data;
 
-  const orderSnap = await db.collection('orders').doc(orderId).get();
-  if (!orderSnap.exists) throw new AppError(404, 'Order not found');
-  const order = orderSnap.data()!;
-  if (order['userId'] !== req.uid) throw new AppError(403, 'Forbidden');
+  const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+  if (orderRes.rows.length === 0) throw new AppError(404, 'Order not found');
+  const order = orderRes.rows[0];
+  if (order.user_uid !== req.uid) throw new AppError(403, 'Forbidden');
 
   const phone = customerPhone.replace(/\D/g, '');
   const phone10 = phone.length > 10 ? phone.slice(-10) : phone;
@@ -35,7 +34,7 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
 
   const payload = JSON.stringify({
     order_id: cfOrderId,
-    order_amount: parseFloat((order['total'] as number).toFixed(2)),
+    order_amount: parseFloat((order.total as number).toFixed(2)),
     order_currency: 'INR',
     order_meta: {
       return_url: `https://auramikadaily.com/payment/return?order_id={order_id}`,
@@ -51,10 +50,10 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
 
   const cfRes = await cashfreeRequest('POST', '/orders', payload);
 
-  await db.collection('orders').doc(orderId).update({
-    cashfreeOrderId: cfOrderId,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  await pool.query(
+    'UPDATE orders SET cashfree_order_id = $1, updated_at = NOW() WHERE id = $2',
+    [cfOrderId, orderId],
+  );
 
   res.json({
     paymentSessionId: (cfRes as Record<string, unknown>)['payment_session_id'],
@@ -63,7 +62,7 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
   });
 });
 
-// POST /payments/webhook — Cashfree webhook
+// POST /payments/webhook
 router.post('/webhook', async (req: Request, res: Response) => {
   const event = req.body as {
     type: string;
@@ -74,58 +73,53 @@ router.post('/webhook', async (req: Request, res: Response) => {
   };
 
   if (event.type === 'PAYMENT_SUCCESS_WEBHOOK') {
-    const cfOrderId: string = event.data.order.order_id;
-    const cfPaymentId: string = event.data.payment.cf_payment_id;
+    const cfOrderId = event.data.order.order_id;
+    const cfPaymentId = event.data.payment.cf_payment_id;
 
-    const snap = await db.collection('orders')
-      .where('cashfreeOrderId', '==', cfOrderId)
-      .limit(1)
-      .get();
+    const orderRes = await pool.query(
+      'SELECT * FROM orders WHERE cashfree_order_id = $1',
+      [cfOrderId],
+    );
 
-    if (!snap.empty) {
-      const docRef = snap.docs[0]!.ref;
-      const orderData = snap.docs[0]!.data();
+    if (orderRes.rows.length > 0) {
+      const order = orderRes.rows[0];
 
-      await docRef.update({
-        status: 'confirmed',
-        cashfreePaymentId: cfPaymentId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      await pool.query(
+        "UPDATE orders SET status = 'confirmed', cashfree_payment_id = $1, updated_at = NOW() WHERE id = $2",
+        [cfPaymentId, order.id],
+      );
 
-      const giftCardCode: string | null = orderData['giftCardCode'] ?? null;
-      const giftCardDiscount: number = orderData['giftCardDiscount'] ?? 0;
-      if (giftCardCode && giftCardDiscount > 0) {
-        const gcRef = db.collection('giftCards').doc(giftCardCode);
-        await db.runTransaction(async t => {
-          const gcSnap = await t.get(gcRef);
-          const remaining = (gcSnap.data()?.remainingAmount ?? 0) - giftCardDiscount;
-          t.update(gcRef, {
-            remainingAmount: Math.max(0, remaining),
-            status: remaining <= 0 ? 'used' : 'active',
-          });
-        });
+      if (order.gift_card_code && order.gift_card_discount > 0) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const gcRes = await client.query('SELECT remaining_amount FROM gift_cards WHERE code = $1 FOR UPDATE', [order.gift_card_code]);
+          if (gcRes.rows.length > 0) {
+            const remaining = Math.max(0, (gcRes.rows[0].remaining_amount as number) - (order.gift_card_discount as number));
+            await client.query(
+              'UPDATE gift_cards SET remaining_amount = $1, status = $2 WHERE code = $3',
+              [remaining, remaining <= 0 ? 'used' : 'active', order.gift_card_code],
+            );
+          }
+          await client.query('COMMIT');
+        } catch (e) {
+          await client.query('ROLLBACK');
+          throw e;
+        } finally {
+          client.release();
+        }
       }
 
-      await db.collection('carts').doc(orderData['userId'] as string).set({
-        userId: orderData['userId'],
-        items: [],
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      await pool.query('DELETE FROM cart_items WHERE user_uid = $1', [order.user_uid]);
     }
   }
 
   if (event.type === 'PAYMENT_FAILED_WEBHOOK') {
-    const cfOrderId: string = event.data.order.order_id;
-    const snap = await db.collection('orders')
-      .where('cashfreeOrderId', '==', cfOrderId)
-      .limit(1)
-      .get();
-    if (!snap.empty) {
-      await snap.docs[0]!.ref.update({
-        status: 'payment_failed',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    }
+    const cfOrderId = event.data.order.order_id;
+    await pool.query(
+      "UPDATE orders SET status = 'payment_failed', updated_at = NOW() WHERE cashfree_order_id = $1",
+      [cfOrderId],
+    );
   }
 
   res.status(200).json({ received: true });
@@ -133,8 +127,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
 // GET /payments/verify/:cashfreeOrderId
 router.get('/verify/:cashfreeOrderId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { cashfreeOrderId } = req.params as { cashfreeOrderId: string };
-  const cfRes = await cashfreeRequest('GET', `/orders/${cashfreeOrderId}`, null);
+  const cfRes = await cashfreeRequest('GET', `/orders/${req.params['cashfreeOrderId']}`, null);
   res.json(cfRes);
 });
 
@@ -153,19 +146,14 @@ function cashfreeRequest(method: string, path: string, body: string | null): Pro
         ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}),
       },
     };
-
     const request = https.request(options, response => {
       let data = '';
       response.on('data', chunk => (data += chunk));
       response.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch {
-          reject(new Error('Invalid JSON from Cashfree'));
-        }
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error('Invalid JSON from Cashfree')); }
       });
     });
-
     request.on('error', reject);
     if (body) request.write(body);
     request.end();

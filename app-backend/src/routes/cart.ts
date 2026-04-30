@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import admin from 'firebase-admin';
-import { db } from '../config/firebase';
+import { pool } from '../config/db';
 import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
@@ -16,53 +15,43 @@ const CartItemSchema = z.object({
 
 // GET /cart
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const snap = await db.collection('carts').doc(req.uid).get();
-  res.json({ items: snap.exists ? (snap.data()?.items ?? []) : [] });
+  const result = await pool.query(
+    'SELECT * FROM cart_items WHERE user_uid = $1 ORDER BY id',
+    [req.uid],
+  );
+  res.json({ items: result.rows });
 });
 
-// PUT /cart/items — add or update quantity
+// PUT /cart/items
 router.put('/items', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const parsed = CartItemSchema.safeParse(req.body);
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
 
   const { productId, quantity, isExpress } = parsed.data;
-  const cartRef = db.collection('carts').doc(req.uid);
-  const snap = await cartRef.get();
-  const items: Array<{ productId: string; quantity: number; isExpress: boolean }> =
-    snap.data()?.items ?? [];
+  await pool.query(
+    `INSERT INTO cart_items (user_uid, product_id, quantity, is_express, updated_at)
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (user_uid, product_id)
+     DO UPDATE SET quantity = $3, is_express = $4, updated_at = NOW()`,
+    [req.uid, productId, quantity, isExpress],
+  );
 
-  const idx = items.findIndex(i => i.productId === productId);
-  if (idx >= 0) {
-    items[idx] = { productId, quantity, isExpress };
-  } else {
-    items.push({ productId, quantity, isExpress });
-  }
-
-  await cartRef.set({ userId: req.uid, items, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-  res.json({ items });
+  const result = await pool.query('SELECT * FROM cart_items WHERE user_uid = $1', [req.uid]);
+  res.json({ items: result.rows });
 });
 
 // DELETE /cart/items/:productId
 router.delete('/items/:productId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { productId } = req.params as { productId: string };
-  const cartRef = db.collection('carts').doc(req.uid);
-  const snap = await cartRef.get();
-  const items: Array<{ productId: string }> = snap.data()?.items ?? [];
-
-  await cartRef.update({
-    items: items.filter(i => i.productId !== productId),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  await pool.query(
+    'DELETE FROM cart_items WHERE user_uid = $1 AND product_id = $2',
+    [req.uid, req.params['productId']],
+  );
   res.json({ deleted: true });
 });
 
-// DELETE /cart — clear cart
+// DELETE /cart
 router.delete('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  await db.collection('carts').doc(req.uid).set({
-    userId: req.uid,
-    items: [],
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  await pool.query('DELETE FROM cart_items WHERE user_uid = $1', [req.uid]);
   res.json({ cleared: true });
 });
 

@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
+import { runMigrations } from './db/migrate';
 import { requestLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -55,8 +56,13 @@ app.use(`${v1}/legal`, legalRoutes);
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
 
-app.listen(env.port, () => {
-  console.log(`[AURAMIKA API v2] running on port ${env.port} — env=${env.nodeEnv}`);
+runMigrations().catch(err => {
+  console.error('[DB] Migration failed:', err);
+  process.exit(1);
+}).then(() => {
+  app.listen(env.port, () => {
+    console.log(`[AURAMIKA API v2] running on port ${env.port} — env=${env.nodeEnv}`);
+  });
 });
 
 export default app;
