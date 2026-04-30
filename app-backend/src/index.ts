@@ -1,3 +1,4 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,44 +7,38 @@ import { env } from './config/env';
 import { requestLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
 
-// Feature routers
-import authRoutes from './features/auth/auth.routes';
-import usersRoutes from './features/users/users.routes';
-import productsRoutes from './features/products/products.routes';
-import cartRoutes from './features/cart/cart.routes';
-import ordersRoutes from './features/orders/orders.routes';
-import paymentsRoutes from './features/payments/payments.routes';
-import vendorsRoutes from './features/vendors/vendors.routes';
-import giftCardsRoutes from './features/gift-cards/gift-cards.routes';
-import customOrdersRoutes from './features/custom-orders/custom-orders.routes';
-import stylistRoutes from './features/stylist/stylist.routes';
-import legalRoutes from './features/legal/legal.routes';
+import authRoutes from './routes/auth';
+import usersRoutes from './routes/users';
+import productsRoutes from './routes/products';
+import cartRoutes from './routes/cart';
+import ordersRoutes from './routes/orders';
+import paymentsRoutes from './routes/payments';
+import vendorsRoutes from './routes/vendors';
+import giftCardsRoutes from './routes/giftCards';
+import customOrdersRoutes from './routes/customOrders';
+import stylistRoutes from './routes/stylist';
+import legalRoutes from './routes/legal';
 
 const app = express();
 
-// ── Security & parsing ────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: '*' }));
 
-// Raw body for Cashfree webhook signature verification
+// Raw body required for Cashfree webhook signature verification
 app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '1mb' }));
 
-// ── Rate limiting ─────────────────────────────────────────────────────────────
 const limiter = rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false });
 app.use('/api/', limiter);
 
 const strictLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false });
 app.use('/api/v1/stylist/', strictLimiter);
 
-// ── Logging ───────────────────────────────────────────────────────────────────
 app.use(requestLogger);
 
-// ── Health check ──────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ status: 'ok', env: env.nodeEnv }));
+app.get('/health', (_req, res) => res.json({ status: 'ok', env: env.nodeEnv, version: '2.0.0' }));
 
-// ── API routes ────────────────────────────────────────────────────────────────
 const v1 = '/api/v1';
 app.use(`${v1}/auth`, authRoutes);
 app.use(`${v1}/users`, usersRoutes);
@@ -57,14 +52,11 @@ app.use(`${v1}/custom-orders`, customOrdersRoutes);
 app.use(`${v1}/stylist`, stylistRoutes);
 app.use(`${v1}/legal`, legalRoutes);
 
-// ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
-
-// ── Error handler ─────────────────────────────────────────────────────────────
 app.use(errorHandler);
 
 app.listen(env.port, () => {
-  console.log(`[AURAMIKA API] running on port ${env.port} — env=${env.nodeEnv}`);
+  console.log(`[AURAMIKA API v2] running on port ${env.port} — env=${env.nodeEnv}`);
 });
 
 export default app;

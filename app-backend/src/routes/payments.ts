@@ -1,16 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import https from 'https';
-import { db } from '../../config/firebase';
-import { requireAuth } from '../../middleware/auth';
-import { AppError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
-import { env } from '../../config/env';
 import admin from 'firebase-admin';
+import { db } from '../config/firebase';
+import { requireAuth } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
+import { env } from '../config/env';
 
 const router = Router();
 
-// POST /payments/create-order — create a Cashfree order and return payment_session_id
 const CreatePaymentSchema = z.object({
   orderId: z.string().min(1),
   customerName: z.string().min(1),
@@ -18,6 +17,7 @@ const CreatePaymentSchema = z.object({
   customerEmail: z.string().email().optional(),
 });
 
+// POST /payments/create-order
 router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const parsed = CreatePaymentSchema.safeParse(req.body);
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
@@ -63,11 +63,14 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
   });
 });
 
-// POST /payments/webhook — Cashfree webhook for payment events
+// POST /payments/webhook — Cashfree webhook
 router.post('/webhook', async (req: Request, res: Response) => {
   const event = req.body as {
     type: string;
-    data: { order: { order_id: string; order_status: string }; payment: { cf_payment_id: string } };
+    data: {
+      order: { order_id: string; order_status: string };
+      payment: { cf_payment_id: string };
+    };
   };
 
   if (event.type === 'PAYMENT_SUCCESS_WEBHOOK') {
@@ -89,7 +92,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Deduct gift card balance if applicable
       const giftCardCode: string | null = orderData['giftCardCode'] ?? null;
       const giftCardDiscount: number = orderData['giftCardDiscount'] ?? 0;
       if (giftCardCode && giftCardDiscount > 0) {
@@ -104,7 +106,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
         });
       }
 
-      // Clear cart after successful payment
       await db.collection('carts').doc(orderData['userId'] as string).set({
         userId: orderData['userId'],
         items: [],
@@ -130,14 +131,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
   res.status(200).json({ received: true });
 });
 
-// GET /payments/verify/:cashfreeOrderId — verify payment status
+// GET /payments/verify/:cashfreeOrderId
 router.get('/verify/:cashfreeOrderId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { cashfreeOrderId } = req.params as { cashfreeOrderId: string };
   const cfRes = await cashfreeRequest('GET', `/orders/${cashfreeOrderId}`, null);
   res.json(cfRes);
 });
 
-// ── Helper: make a Cashfree API request ──────────────────────────────────────
 function cashfreeRequest(method: string, path: string, body: string | null): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const url = new URL(env.cashfree.baseUrl + path);

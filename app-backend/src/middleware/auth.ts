@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
+import { AppError } from './errorHandler';
 import { AuthenticatedRequest } from '../types';
 
 export async function requireAuth(
@@ -15,12 +16,10 @@ export async function requireAuth(
   }
 
   const token = header.slice(7);
+  const decoded = await auth.verifyIdToken(token).catch(() => {
+    throw new AppError(401, 'Invalid or expired token');
+  });
 
-  try {
-    const decoded = await auth.verifyIdToken(token);
-    req.uid = decoded.uid;
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
-  }
+  req.uid = decoded.uid;
+  next();
 }

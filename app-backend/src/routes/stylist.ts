@@ -1,10 +1,10 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import https from 'https';
-import { requireAuth } from '../../middleware/auth';
-import { AppError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
-import { env } from '../../config/env';
+import { requireAuth } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
+import { env } from '../config/env';
 
 const router = Router();
 
@@ -22,7 +22,7 @@ Keep responses concise (2-4 sentences) and always suggest specific product categ
 available on AURAMIKA: Old Money, Street Wear, Minimal Chic, Boho Goddess, Bridal, Everyday Basics.
 Be warm, stylish, and knowledgeable about Indian jewellery traditions and modern trends.`;
 
-// POST /stylist/chat — AI jewellery stylist powered by OpenAI
+// POST /stylist/chat
 router.post('/chat', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   if (!env.openai.apiKey) throw new AppError(503, 'AI Stylist is not configured');
 
@@ -30,17 +30,16 @@ router.post('/chat', requireAuth, async (req: AuthenticatedRequest, res: Respons
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
 
   const { message, conversationHistory = [] } = parsed.data;
-
   const messages = [
     ...conversationHistory.map(m => ({ role: m.role, content: m.content })),
     { role: 'user' as const, content: message },
   ];
 
-  const response = await openAIChat(messages);
-  res.json({ reply: response });
+  const reply = await openAIChat(messages);
+  res.json({ reply });
 });
 
-async function openAIChat(
+function openAIChat(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
 ): Promise<string> {
   const payload = JSON.stringify({

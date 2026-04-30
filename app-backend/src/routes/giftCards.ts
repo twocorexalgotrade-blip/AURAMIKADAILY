@@ -1,13 +1,13 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { db } from '../../config/firebase';
-import { requireAuth } from '../../middleware/auth';
-import { AppError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
+import { db } from '../config/firebase';
+import { requireAuth } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
 
 const router = Router();
 
-// POST /gift-cards/validate — check if a code is valid and return balance
+// POST /gift-cards/validate
 router.post('/validate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { code } = z.object({ code: z.string().min(1) }).parse(req.body);
 
@@ -23,14 +23,10 @@ router.post('/validate', requireAuth, async (req: AuthenticatedRequest, res: Res
     throw new AppError(400, 'Gift card has expired');
   }
 
-  res.json({
-    code,
-    remainingAmount: gc['remainingAmount'],
-    status: gc['status'],
-  });
+  res.json({ code, remainingAmount: gc['remainingAmount'], status: gc['status'] });
 });
 
-// GET /gift-cards/mine — gift cards owned by the user
+// GET /gift-cards/mine
 router.get('/mine', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const snap = await db.collection('giftCards')
     .where('ownerId', '==', req.uid)

@@ -31,4 +31,6 @@ export const env = {
   openai: {
     apiKey: process.env['OPENAI_API_KEY'] ?? '',
   },
+
+  adminUids: (process.env['ADMIN_UIDS'] ?? '').split(',').filter(Boolean),
 } as const;

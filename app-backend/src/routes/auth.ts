@@ -1,20 +1,20 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { db, auth } from '../../config/firebase';
-import { requireAuth } from '../../middleware/auth';
-import { AppError } from '../../middleware/errorHandler';
-import { AuthenticatedRequest } from '../../types';
 import admin from 'firebase-admin';
+import { db, auth } from '../config/firebase';
+import { requireAuth } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
 
 const router = Router();
 
-// POST /auth/register — called after OTP verification to save profile
 const RegisterSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(10),
   email: z.string().email().optional(),
 });
 
+// POST /auth/register — called after OTP verification to save profile
 router.post('/register', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const parsed = RegisterSchema.safeParse(req.body);
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
@@ -34,6 +34,7 @@ router.post('/register', requireAuth, async (req: AuthenticatedRequest, res: Res
     phone,
     email: email ?? null,
     addresses: [],
+    wishlist: [],
     isNewUser: true,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),

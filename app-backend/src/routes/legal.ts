@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 
 const router = Router();
 
-// GET /legal/privacy — Privacy Policy
 router.get('/privacy', (_req: Request, res: Response) => {
   res.json({
     title: 'Privacy Policy',
@@ -19,13 +18,12 @@ router.get('/privacy', (_req: Request, res: Response) => {
   });
 });
 
-// GET /legal/terms — Terms of Service
 router.get('/terms', (_req: Request, res: Response) => {
   res.json({
     title: 'Terms of Service',
     lastUpdated: 'January 2025',
     company: 'AURAMIKA Pvt. Ltd.',
-    contact: 'privacy@auramika.in',
+    contact: 'legal@auramika.in',
     sections: [
       { heading: 'Eligibility', body: 'Must be 18+ and capable of a legally binding agreement.' },
       { heading: 'User Accounts', body: 'Provide accurate information and keep credentials secure.' },
