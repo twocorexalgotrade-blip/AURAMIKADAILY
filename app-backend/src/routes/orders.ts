@@ -17,17 +17,16 @@ const AddressSchema = z.object({
   pincode: z.string().length(6),
 });
 
+// Client only sends productId + quantity. Price, name, brand, and image are
+// hydrated from the products table server-side — never trust client-supplied
+// prices (would let a malicious user pay ₹1 for any product).
 const OrderItemSchema = z.object({
-  productId: z.string(),
-  productName: z.string(),
-  brandName: z.string(),
-  price: z.number().positive(),
-  quantity: z.number().int().min(1),
-  imageUrl: z.string().optional(),
+  productId: z.string().min(1),
+  quantity: z.number().int().min(1).max(10),
 });
 
 const CreateOrderSchema = z.object({
-  items: z.array(OrderItemSchema).min(1),
+  items: z.array(OrderItemSchema).min(1).max(50),
   address: AddressSchema,
   isExpress: z.boolean().default(false),
   giftCardCode: z.string().optional(),
@@ -44,7 +43,39 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
   if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
 
   const { items, address, isExpress, giftCardCode } = parsed.data;
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  // Hydrate every line from the products table — refuse if any product is
+  // missing or out of stock. This is the source of truth for prices.
+  const productIds = items.map(i => i.productId);
+  const productsRes = await pool.query(
+    `SELECT id, product_name, brand_name, price, image_urls, in_stock
+     FROM products WHERE id = ANY($1)`,
+    [productIds],
+  );
+  const productById = new Map<string, {
+    id: string;
+    product_name: string;
+    brand_name: string;
+    price: number;
+    image_urls: string[];
+    in_stock: boolean;
+  }>(productsRes.rows.map(r => [r.id as string, r as never]));
+
+  const hydrated = items.map(i => {
+    const p = productById.get(i.productId);
+    if (!p) throw new AppError(400, `Product not found: ${i.productId}`);
+    if (!p.in_stock) throw new AppError(400, `Out of stock: ${p.product_name}`);
+    return {
+      productId: p.id,
+      productName: p.product_name,
+      brandName: p.brand_name,
+      price: p.price,
+      quantity: i.quantity,
+      imageUrl: p.image_urls?.[0] ?? null,
+    };
+  });
+
+  const subtotal = hydrated.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const deliveryFee = isExpress ? 0 : 49;
 
   let giftCardDiscount = 0;
@@ -75,11 +106,11 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
        total, isExpress, address.name, address.phone, address.line1, address.city, address.pincode],
     );
 
-    for (const item of items) {
+    for (const item of hydrated) {
       await client.query(
         `INSERT INTO order_items (order_id, product_id, product_name, brand_name, price, quantity, image_url)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [orderId, item.productId, item.productName, item.brandName, item.price, item.quantity, item.imageUrl ?? null],
+        [orderId, item.productId, item.productName, item.brandName, item.price, item.quantity, item.imageUrl],
       );
     }
 

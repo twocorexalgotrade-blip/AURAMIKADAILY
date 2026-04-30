@@ -41,7 +41,11 @@ export const env = {
     appId: process.env['CASHFREE_APP_ID'] ?? '',
     secretKey: process.env['CASHFREE_SECRET_KEY'] ?? '',
     env: (process.env['CASHFREE_ENV'] ?? 'TEST') as 'TEST' | 'PROD',
-    mock: process.env['CASHFREE_MOCK'] === 'true',
+    // Hard-disable mock in production so a stray env var can't silently
+    // confirm real customer orders for free.
+    mock:
+      process.env['CASHFREE_MOCK'] === 'true' &&
+      process.env['NODE_ENV'] !== 'production',
     get baseUrl() {
       return this.env === 'PROD'
         ? 'https://api.cashfree.com/pg'

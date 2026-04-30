@@ -24,7 +24,25 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({ origin: '*' }));
+
+// Mobile apps don't enforce CORS — pinning origins only protects the website
+// (auramikadaily.com) from making requests from other origins. Allow no-origin
+// requests (mobile, curl, server-to-server) and the production website +
+// localhost during development.
+const ALLOWED_ORIGINS = new Set([
+  'https://auramikadaily.com',
+  'https://www.auramikadaily.com',
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+      return cb(new Error(`CORS: origin not allowed: ${origin}`));
+    },
+  }),
+);
 
 // Raw body required for Cashfree webhook signature verification
 app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));

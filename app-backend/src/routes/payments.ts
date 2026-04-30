@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import https from 'https';
+import crypto from 'crypto';
 import { pool } from '../config/db';
 import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
@@ -84,14 +85,43 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
 });
 
 // POST /payments/webhook
+// req.body is a Buffer here because index.ts mounts express.raw() on this path
+// — required so we can verify Cashfree's HMAC signature against the exact bytes.
 router.post('/webhook', async (req: Request, res: Response) => {
-  const event = req.body as {
+  const rawBody = req.body as Buffer;
+  if (!Buffer.isBuffer(rawBody)) throw new AppError(400, 'Invalid webhook body');
+
+  // Mock mode (local dev) skips signature verification.
+  if (!env.cashfree.mock) {
+    const signature = req.header('x-webhook-signature');
+    const timestamp = req.header('x-webhook-timestamp');
+    if (!signature || !timestamp) throw new AppError(401, 'Missing webhook signature');
+
+    const expected = crypto
+      .createHmac('sha256', env.cashfree.secretKey)
+      .update(timestamp + rawBody.toString('utf8'))
+      .digest('base64');
+
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      console.warn('[Cashfree webhook] Signature mismatch — rejecting');
+      throw new AppError(401, 'Invalid webhook signature');
+    }
+  }
+
+  let event: {
     type: string;
     data: {
       order: { order_id: string; order_status: string };
       payment: { cf_payment_id: string };
     };
   };
+  try {
+    event = JSON.parse(rawBody.toString('utf8'));
+  } catch {
+    throw new AppError(400, 'Invalid webhook JSON');
+  }
 
   if (event.type === 'PAYMENT_SUCCESS_WEBHOOK') {
     const cfOrderId = event.data.order.order_id;
@@ -148,7 +178,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
 // GET /payments/verify/:cashfreeOrderId
 router.get('/verify/:cashfreeOrderId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const cfRes = await cashfreeRequest('GET', `/orders/${req.params['cashfreeOrderId']}`, null);
+  const cfOrderId = req.params['cashfreeOrderId'] ?? '';
+  // Ownership check — only the user who created the order can poll its status.
+  const orderRes = await pool.query(
+    'SELECT user_uid FROM orders WHERE cashfree_order_id = $1',
+    [cfOrderId],
+  );
+  if (orderRes.rows.length === 0) throw new AppError(404, 'Order not found');
+  if (orderRes.rows[0].user_uid !== req.uid) throw new AppError(403, 'Forbidden');
+
+  const cfRes = await cashfreeRequest('GET', `/orders/${cfOrderId}`, null);
   res.json(cfRes);
 });
 
