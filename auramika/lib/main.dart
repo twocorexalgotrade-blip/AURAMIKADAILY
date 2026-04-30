@@ -63,7 +63,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      observers: [_AppObserver()],
+      observers: kDebugMode ? [_AppObserver()] : [],
       child: const AuramikaApp(),
     ),
   );

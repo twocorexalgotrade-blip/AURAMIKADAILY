@@ -41,9 +41,8 @@ class _PdpImageGalleryState extends State<PdpImageGallery> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // Simulate 3 image slots (placeholder)
   int get _imageCount =>
-      widget.product.imageUrls.isEmpty ? 3 : widget.product.imageUrls.length;
+      widget.product.imageUrls.isEmpty ? 1 : widget.product.imageUrls.length;
 
   @override
   void dispose() {

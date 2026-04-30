@@ -58,7 +58,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _sendOtp() async {
-    debugPrint('[OTP] sendOtp → phone=${widget.phone} expectNewUser=${widget.expectNewUser}');
+    if (kDebugMode) debugPrint('[OTP] sendOtp → phone=${widget.phone} expectNewUser=${widget.expectNewUser}');
     setState(() {
       _sending = true;
       _error = null;
@@ -67,11 +67,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       phoneNumber: widget.phone,
       timeout: const Duration(seconds: 60),
       verificationCompleted: (PhoneAuthCredential credential) async {
-        debugPrint('[OTP] verificationCompleted → auto-sign-in');
+        if (kDebugMode) debugPrint('[OTP] verificationCompleted → auto-sign-in');
         await _signIn(credential);
       },
       verificationFailed: (FirebaseAuthException e) {
-        debugPrint('[OTP] verificationFailed → code=${e.code} message=${e.message}');
+        if (kDebugMode) debugPrint('[OTP] verificationFailed → code=${e.code} message=${e.message}');
         if (mounted) {
           setState(() {
             _sending = false;
@@ -80,7 +80,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         }
       },
       codeSent: (String verificationId, int? resendToken) {
-        debugPrint('[OTP] codeSent → verificationId=$verificationId resendToken=$resendToken');
+        if (kDebugMode) debugPrint('[OTP] codeSent → verificationId=$verificationId resendToken=$resendToken');
         if (mounted) {
           setState(() {
             _verificationId = verificationId;
@@ -90,7 +90,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         }
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        debugPrint('[OTP] codeAutoRetrievalTimeout → verificationId=$verificationId');
+        if (kDebugMode) debugPrint('[OTP] codeAutoRetrievalTimeout → verificationId=$verificationId');
         if (mounted) setState(() => _verificationId = verificationId);
       },
     );
@@ -106,7 +106,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final otp = _ctls.map((c) => c.text).join();
     if (otp.length < 6 || _verificationId == null) return;
 
-    debugPrint('[OTP] verify → submitting code for phone=${widget.phone}');
+    if (kDebugMode) debugPrint('[OTP] verify → submitting code for phone=${widget.phone}');
     setState(() {
       _verifying = true;
       _error = null;
@@ -119,7 +119,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       );
       await _signIn(credential);
     } on FirebaseAuthException catch (e) {
-      debugPrint('[OTP] verify failed → code=${e.code} message=${e.message}');
+      if (kDebugMode) debugPrint('[OTP] verify failed → code=${e.code} message=${e.message}');
       if (mounted) {
         _clearBoxes();
         setState(() {
@@ -131,13 +131,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _signIn(PhoneAuthCredential credential) async {
-    debugPrint('[OTP] signIn → attempting Firebase signInWithCredential');
+    if (kDebugMode) debugPrint('[OTP] signIn → attempting Firebase signInWithCredential');
     try {
       final result =
           await FirebaseAuth.instance.signInWithCredential(credential);
 
       final isNewUser = result.additionalUserInfo?.isNewUser ?? true;
-      debugPrint('[OTP] signIn → success uid=${result.user?.uid} isNewUser=$isNewUser expectNewUser=${widget.expectNewUser}');
+      if (kDebugMode) debugPrint('[OTP] signIn → success uid=${result.user?.uid} isNewUser=$isNewUser expectNewUser=${widget.expectNewUser}');
 
       // Save registration data BEFORE checking mounted — Hive and Riverpod
       // state do not require the widget to be attached. Doing this first
@@ -147,21 +147,21 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // (e.g. created by a previous abandoned sign-in attempt), we must not
       // overwrite that user's existing Hive profile with the registration form data.
       if (widget.expectNewUser && isNewUser) {
-        debugPrint('[OTP] signIn → saving registration data name="${widget.name}" email="${widget.email}" phone="${widget.phone}" dob="${widget.dob}"');
+        if (kDebugMode) debugPrint('[OTP] signIn → saving registration data name="${widget.name}" email="${widget.email}" phone="${widget.phone}" dob="${widget.dob}"');
         ref.read(userProfileProvider.notifier).update(
           name: widget.name,
           email: widget.email,
           phone: widget.phone,
           dob: widget.dob,
         );
-        debugPrint('[OTP] signIn → profile saved to Hive');
+        if (kDebugMode) debugPrint('[OTP] signIn → profile saved to Hive');
       }
 
       if (!mounted) return;
 
       // Phone already had a live account — sign out and let them use sign-in.
       if (widget.expectNewUser && !isNewUser) {
-        debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
+        if (kDebugMode) debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
         context.go('/auth/login', extra: {
@@ -175,7 +175,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // Phone has no account (deleted or never registered) — block sign-in
       // and redirect to create account instead.
       if (!widget.expectNewUser && isNewUser) {
-        debugPrint('[OTP] signIn → no account found for phone, redirecting to register');
+        if (kDebugMode) debugPrint('[OTP] signIn → no account found for phone, redirecting to register');
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
         context.go('/auth/register', extra: {
@@ -189,14 +189,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       ref.read(authProvider.notifier).login(result.user?.uid ?? widget.phone);
 
       if (!widget.expectNewUser) {
-        debugPrint('[OTP] signIn → returning user, loading profile from Hive');
+        if (kDebugMode) debugPrint('[OTP] signIn → returning user, loading profile from Hive');
         ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
       }
 
-      debugPrint('[OTP] signIn → redirecting to ${widget.redirectPath}');
+      if (kDebugMode) debugPrint('[OTP] signIn → redirecting to ${widget.redirectPath}');
       context.go(widget.redirectPath);
     } on FirebaseAuthException catch (e) {
-      debugPrint('[OTP] signIn failed → code=${e.code} message=${e.message}');
+      if (kDebugMode) debugPrint('[OTP] signIn failed → code=${e.code} message=${e.message}');
       if (mounted) {
         _clearBoxes();
         setState(() {

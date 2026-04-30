@@ -21,22 +21,7 @@ class _GiftCard {
   });
 }
 
-const _giftCards = [
-  _GiftCard(
-    code: 'AURA-GIFT-2025-X4K9',
-    balance: 750,
-    originalValue: 1000,
-    expiry: '31 Dec 2025',
-    isActive: true,
-  ),
-  _GiftCard(
-    code: 'AURA-GIFT-2024-Z2P1',
-    balance: 0,
-    originalValue: 500,
-    expiry: '31 Dec 2024',
-    isActive: false,
-  ),
-];
+const _giftCards = <_GiftCard>[];
 
 class GiftCardsScreen extends StatelessWidget {
   const GiftCardsScreen({super.key});

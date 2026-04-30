@@ -37,19 +37,19 @@ class WishlistController extends StateNotifier<WishlistState> {
 
   void toggle(WishlistItem item) {
     if (state.contains(item.id)) {
-      debugPrint('[Wishlist] remove → id=${item.id} name="${item.productName}"');
+      if (kDebugMode) debugPrint('[Wishlist] remove → id=${item.id} name="${item.productName}"');
       state = state.copyWith(
         items: state.items.where((i) => i.id != item.id).toList(),
       );
     } else {
-      debugPrint('[Wishlist] add → id=${item.id} name="${item.productName}"');
+      if (kDebugMode) debugPrint('[Wishlist] add → id=${item.id} name="${item.productName}"');
       state = state.copyWith(items: [...state.items, item]);
     }
-    debugPrint('[Wishlist] count=${state.items.length}');
+    if (kDebugMode) debugPrint('[Wishlist] count=${state.items.length}');
   }
 
   void clear() {
-    debugPrint('[Wishlist] clear → removing ${state.items.length} items');
+    if (kDebugMode) debugPrint('[Wishlist] clear → removing ${state.items.length} items');
     state = const WishlistState();
   }
 }

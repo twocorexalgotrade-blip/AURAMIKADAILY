@@ -96,7 +96,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       imagePath: box.get('imagePath', defaultValue: '') as String,
       addresses: _readAddresses(box),
     );
-    debugPrint('[Profile] _load → name="${state.name}" phone="${state.phone}" addresses=${state.addresses.length}');
+    if (kDebugMode) debugPrint('[Profile] _load → name="${state.name}" phone="${state.phone}" addresses=${state.addresses.length}');
   }
 
   List<Address> _readAddresses(Box box) {
@@ -119,7 +119,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
   // Re-reads Hive into state AND always sets phone from the auth session.
   void loadFromAuth(String phone) {
-    debugPrint('[Profile] loadFromAuth → phone=$phone');
+    if (kDebugMode) debugPrint('[Profile] loadFromAuth → phone=$phone');
     final box = Hive.box(_boxName);
     state = UserProfile(
       name: box.get('name', defaultValue: '') as String,
@@ -130,7 +130,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       addresses: _readAddresses(box),
     );
     box.put('phone', phone);
-    debugPrint('[Profile] loadFromAuth → complete name="${state.name}" addresses=${state.addresses.length}');
+    if (kDebugMode) debugPrint('[Profile] loadFromAuth → complete name="${state.name}" addresses=${state.addresses.length}');
   }
 
   void reload() => _load();
@@ -142,7 +142,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     String? dob,
     String? imagePath,
   }) {
-    debugPrint('[Profile] update → name=$name email=$email phone=$phone dob=$dob');
+    if (kDebugMode) debugPrint('[Profile] update → name=$name email=$email phone=$phone dob=$dob');
     state = state.copyWith(
       name: name,
       email: email,
@@ -159,35 +159,35 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   }
 
   void addAddress(Address address) {
-    debugPrint('[Profile] addAddress → label="${address.label}" city="${address.city}"');
+    if (kDebugMode) debugPrint('[Profile] addAddress → label="${address.label}" city="${address.city}"');
     final updated = [...state.addresses, address];
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
-    debugPrint('[Profile] addresses count=${updated.length}');
+    if (kDebugMode) debugPrint('[Profile] addresses count=${updated.length}');
   }
 
   void updateAddress(int index, Address address) {
-    debugPrint('[Profile] updateAddress → index=$index label="${address.label}"');
+    if (kDebugMode) debugPrint('[Profile] updateAddress → index=$index label="${address.label}"');
     final updated = [...state.addresses]..[index] = address;
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
   }
 
   void removeAddress(int index) {
-    debugPrint('[Profile] removeAddress → index=$index label="${state.addresses[index].label}"');
+    if (kDebugMode) debugPrint('[Profile] removeAddress → index=$index label="${state.addresses[index].label}"');
     final updated = [...state.addresses]..removeAt(index);
     state = state.copyWith(addresses: updated);
     _persistAddresses(updated);
-    debugPrint('[Profile] addresses count=${updated.length}');
+    if (kDebugMode) debugPrint('[Profile] addresses count=${updated.length}');
   }
 
   void clearState() {
-    debugPrint('[Profile] clearState → in-memory wipe (Hive retained)');
+    if (kDebugMode) debugPrint('[Profile] clearState → in-memory wipe (Hive retained)');
     state = const UserProfile();
   }
 
   void reset() {
-    debugPrint('[Profile] reset → full wipe including Hive');
+    if (kDebugMode) debugPrint('[Profile] reset → full wipe including Hive');
     state = const UserProfile();
     Hive.box(_boxName).clear();
   }

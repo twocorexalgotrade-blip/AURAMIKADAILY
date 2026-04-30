@@ -314,10 +314,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       _finalizeOrder(orderId, productName, total, cart.totalItems, firstItem?.imageUrl, dateStr);
     } catch (e) {
       if (mounted) {
+        final msg = _friendlyPaymentError(e);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Payment failed: $e'),
+          content: Text(msg),
           backgroundColor: AppColors.terraCotta,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
         ));
       }
     } finally {
@@ -373,6 +375,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         _pendingDate        ?? '',
       );
     });
+  }
+
+  String _friendlyPaymentError(Object e) {
+    final raw = e.toString().toLowerCase();
+    if (raw.contains('sign in') || raw.contains('auth')) {
+      return 'Please sign in and try again.';
+    }
+    if (raw.contains('socket') || raw.contains('connection') ||
+        raw.contains('network') || raw.contains('no-server') ||
+        raw.contains('404') || raw.contains('not found')) {
+      return 'Could not reach the payment server. Please check your connection and try again.';
+    }
+    if (raw.contains('500') || raw.contains('server error')) {
+      return 'Payment server error. Please try again in a moment.';
+    }
+    if (raw.contains('session') || raw.contains('session id')) {
+      return 'Could not start payment session. Please try again.';
+    }
+    return 'Payment could not be processed. Please try again.';
   }
 
   void _onCashfreeError(CFErrorResponse errorResponse, String orderId) {
@@ -457,6 +478,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ],
             ),
           ),
+
+          // ── Cashfree sandbox banner ──────────────────────────────────────
+          if (AppConstants.cashfreeTestMode) const _SandboxBanner(),
 
           // ── Scrollable body ──────────────────────────────────────────────
           Expanded(
@@ -880,6 +904,59 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Cashfree Sandbox Banner ───────────────────────────────────────────────────
+class _SandboxBanner extends StatelessWidget {
+  const _SandboxBanner();
+
+  static const _testCard = '4111 1111 1111 1111';
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Clipboard.setData(const ClipboardData(text: '4111111111111111'));
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Test card number copied'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ));
+      },
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFFFFF8E1),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const Icon(Icons.science_outlined, size: 14, color: Color(0xFFF57F17)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: const TextStyle(fontSize: 11, color: Color(0xFFF57F17)),
+                  children: [
+                    const TextSpan(text: 'SANDBOX MODE · Test card: '),
+                    TextSpan(
+                      text: _testCard,
+                      style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                    ),
+                    const TextSpan(text: ' · Any expiry · CVV 123  '),
+                    const TextSpan(
+                      text: 'Tap to copy',
+                      style: TextStyle(decoration: TextDecoration.underline),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -112,7 +112,7 @@ Return ONLY the product ID as a plain string. No markdown, no JSON, no explanati
       if (response.statusCode == 200) {
         final content = response.data['choices'][0]['message']['content'] as String;
         final productId = content.trim();
-        
+
         // Validate that it's a valid product ID
         if (catalog.any((p) => p.id == productId)) {
           return productId;
@@ -121,10 +121,10 @@ Return ONLY the product ID as a plain string. No markdown, no JSON, no explanati
 
       return null;
     } on DioException catch (e) {
-      debugPrint('OpenAI API Error: ${e.message}');
+      if (kDebugMode) debugPrint('OpenAI API Error: ${e.message}');
       return null;
     } catch (e) {
-      debugPrint('OpenAI Error: $e');
+      if (kDebugMode) debugPrint('OpenAI Error: $e');
       return null;
     }
   }

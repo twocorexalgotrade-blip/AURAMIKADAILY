@@ -22,7 +22,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Restore persisted session synchronously so the UI never flickers on cold start.
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
-      debugPrint('[Auth] init → restoring session uid=${currentUser.uid}');
+      if (kDebugMode) debugPrint('[Auth] init → restoring session uid=${currentUser.uid}');
       state = AuthState(isLoggedIn: true, userId: currentUser.uid);
     }
 
@@ -31,7 +31,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // signInWithCredential then may immediately sign out for existing numbers)
     // does not cause a premature isLoggedIn=true flash.
     _sub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      debugPrint('[Auth] authStateChanges → user=${user?.uid ?? 'null'}');
+      if (kDebugMode) debugPrint('[Auth] authStateChanges → user=${user?.uid ?? 'null'}');
       if (user == null) {
         state = const AuthState();
       }
@@ -45,15 +45,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void login(String userId) {
-    debugPrint('[Auth] login → userId=$userId');
+    if (kDebugMode) debugPrint('[Auth] login → userId=$userId');
     state = AuthState(isLoggedIn: true, userId: userId);
   }
 
   Future<void> logout() async {
-    debugPrint('[Auth] logout → signing out userId=${state.userId}');
+    if (kDebugMode) debugPrint('[Auth] logout → signing out userId=${state.userId}');
     await FirebaseAuth.instance.signOut();
     state = const AuthState();
-    debugPrint('[Auth] logout → complete');
+    if (kDebugMode) debugPrint('[Auth] logout → complete');
   }
 }
 

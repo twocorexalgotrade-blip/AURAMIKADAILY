@@ -34,7 +34,7 @@ abstract class AppConstants {
 
   // ── API ───────────────────────────────────────────────────────────────────
   // Update to your Render backend URL (Render dashboard → service → URL).
-  static const String baseUrl = 'https://auramika-app-backend.onrender.com';
+  static const String baseUrl = 'https://auramikadaily.com';
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
