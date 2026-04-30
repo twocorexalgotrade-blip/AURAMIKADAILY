@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -307,28 +308,23 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              try {
-                await FirebaseAuth.instance.currentUser?.delete();
-              } on FirebaseAuthException catch (e) {
-                if (e.code == 'requires-recent-login' && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Please sign out and sign in again before deleting your account.',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                try {
+                  final token = await user.getIdToken();
+                  await Dio().delete(
+                    '${AppConstants.baseUrl}/api/v1/auth/account',
+                    options: Options(headers: {'Authorization': 'Bearer $token'}),
                   );
-                  return;
+                } catch (_) {
+                  // Backend deletion failed; proceed with local cleanup.
                 }
               }
               ref.read(authProvider.notifier).logout();
               ref.read(userProfileProvider.notifier).reset();
               ref.read(cartProvider.notifier).clear();
               ref.read(wishlistProvider.notifier).clear();
-              if (context.mounted) context.push('/auth/register');
+              if (context.mounted) context.go('/auth/register');
             },
             child: Text('Delete',
                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
@@ -358,7 +354,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(context);
               ref.read(authProvider.notifier).logout();
-              ref.read(userProfileProvider.notifier).clearState();
+              ref.read(userProfileProvider.notifier).reset();
               ref.read(cartProvider.notifier).clear();
               ref.read(wishlistProvider.notifier).clear();
               context.go('/');

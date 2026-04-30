@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -55,6 +56,52 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     for (final c in _ctls) { c.dispose(); }
     for (final n in _nodes) { n.dispose(); }
     super.dispose();
+  }
+
+  Future<void> _registerWithBackend() async {
+    try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null) return;
+      await Dio().post(
+        '${AppConstants.baseUrl}/api/v1/auth/register',
+        data: {
+          'name': widget.name ?? '',
+          'phone': widget.phone,
+          if (widget.email != null && widget.email!.isNotEmpty) 'email': widget.email,
+        },
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        }),
+      );
+      if (kDebugMode) debugPrint('[OTP] registerWithBackend → success');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[OTP] registerWithBackend → failed: $e');
+    }
+  }
+
+  Future<void> _fetchProfileFromBackend(String phone) async {
+    try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null) return;
+      final res = await Dio().get(
+        '${AppConstants.baseUrl}/api/v1/users/me',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final data = res.data as Map<String, dynamic>? ?? {};
+      final name = data['name'] as String?;
+      final email = data['email'] as String?;
+      final backendPhone = data['phone'] as String?;
+      if (kDebugMode) debugPrint('[OTP] fetchProfileFromBackend → name="$name" email="$email"');
+      if (!mounted) return;
+      ref.read(userProfileProvider.notifier).update(
+        name: name?.isNotEmpty == true ? name : null,
+        email: email?.isNotEmpty == true ? email : null,
+        phone: backendPhone?.isNotEmpty == true ? backendPhone : phone,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[OTP] fetchProfileFromBackend → failed: $e');
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -155,6 +202,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           dob: widget.dob,
         );
         if (kDebugMode) debugPrint('[OTP] signIn → profile saved to Hive');
+        _registerWithBackend();
       }
 
       if (!mounted) return;
@@ -191,6 +239,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       if (!widget.expectNewUser) {
         if (kDebugMode) debugPrint('[OTP] signIn → returning user, loading profile from Hive');
         ref.read(userProfileProvider.notifier).loadFromAuth(widget.phone);
+        await _fetchProfileFromBackend(widget.phone);
+        if (!mounted) return;
       }
 
       if (kDebugMode) debugPrint('[OTP] signIn → redirecting to ${widget.redirectPath}');
