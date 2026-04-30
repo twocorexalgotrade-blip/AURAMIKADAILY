@@ -7,15 +7,35 @@ function required(key: string): string {
   return val;
 }
 
+// Support either a single FIREBASE_SERVICE_ACCOUNT_JSON (full JSON file content)
+// or three separate FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY vars.
+// The JSON approach avoids all private-key newline mangling issues in Render/Heroku.
+function resolveFirebaseCredentials() {
+  const json = process.env['FIREBASE_SERVICE_ACCOUNT_JSON'];
+  if (json) {
+    const sa = JSON.parse(json) as {
+      project_id: string;
+      client_email: string;
+      private_key: string;
+    };
+    return {
+      projectId: sa.project_id,
+      clientEmail: sa.client_email,
+      privateKey: sa.private_key,
+    };
+  }
+  return {
+    projectId: required('FIREBASE_PROJECT_ID'),
+    clientEmail: required('FIREBASE_CLIENT_EMAIL'),
+    privateKey: required('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+  };
+}
+
 export const env = {
   port: parseInt(process.env['PORT'] ?? '4000', 10),
   nodeEnv: process.env['NODE_ENV'] ?? 'development',
 
-  firebase: {
-    projectId: required('FIREBASE_PROJECT_ID'),
-    clientEmail: required('FIREBASE_CLIENT_EMAIL'),
-    privateKey: required('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
-  },
+  firebase: resolveFirebaseCredentials(),
 
   cashfree: {
     appId: required('CASHFREE_APP_ID'),
