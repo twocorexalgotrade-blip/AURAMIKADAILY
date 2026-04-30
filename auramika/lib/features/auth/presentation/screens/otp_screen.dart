@@ -99,6 +99,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         email: email?.isNotEmpty == true ? email : null,
         phone: backendPhone?.isNotEmpty == true ? backendPhone : phone,
       );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // User has a Firebase Auth account but no DB row (pre-migration user).
+        // Create it now — idempotent, safe to call on every sign-in.
+        if (kDebugMode) debugPrint('[OTP] fetchProfileFromBackend → 404, registering user');
+        _registerWithBackend();
+      } else {
+        if (kDebugMode) debugPrint('[OTP] fetchProfileFromBackend → failed: $e');
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('[OTP] fetchProfileFromBackend → failed: $e');
     }

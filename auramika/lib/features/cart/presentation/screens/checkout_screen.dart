@@ -387,7 +387,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         raw.contains('404') || raw.contains('not found')) {
       return 'Could not reach the payment server. Please check your connection and try again.';
     }
-    if (raw.contains('500') || raw.contains('server error')) {
+    if (raw.contains('cashfree')) {
+      return 'Payment gateway error. Please check your Cashfree credentials and try again.';
+    }
+    if (raw.contains('500') || raw.contains('502') || raw.contains('server error')) {
       return 'Payment server error. Please try again in a moment.';
     }
     if (raw.contains('session') || raw.contains('session id')) {

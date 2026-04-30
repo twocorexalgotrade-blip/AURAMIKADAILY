@@ -48,7 +48,13 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
     },
   });
 
-  const cfRes = await cashfreeRequest('POST', '/orders', payload);
+  const cfRes = await cashfreeRequest('POST', '/orders', payload) as Record<string, unknown>;
+  const sessionId = cfRes['payment_session_id'] as string | undefined;
+  if (!sessionId) {
+    const cfErr = cfRes['message'] ?? cfRes['error'] ?? JSON.stringify(cfRes);
+    console.error('[Cashfree] Missing payment_session_id. Response:', cfRes);
+    throw new AppError(502, `Cashfree payment session error: ${String(cfErr)}`);
+  }
 
   await pool.query(
     'UPDATE orders SET cashfree_order_id = $1, updated_at = NOW() WHERE id = $2',
@@ -56,7 +62,7 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
   );
 
   res.json({
-    paymentSessionId: (cfRes as Record<string, unknown>)['payment_session_id'],
+    paymentSessionId: sessionId,
     cashfreeOrderId: cfOrderId,
     mode: env.cashfree.env,
   });
@@ -150,8 +156,15 @@ function cashfreeRequest(method: string, path: string, body: string | null): Pro
       let data = '';
       response.on('data', chunk => (data += chunk));
       response.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch { reject(new Error('Invalid JSON from Cashfree')); }
+        try {
+          const parsed = JSON.parse(data) as unknown;
+          if ((response.statusCode ?? 0) >= 400) {
+            console.error('[Cashfree] HTTP', response.statusCode, JSON.stringify(parsed));
+            reject(new AppError(502, `Cashfree HTTP ${response.statusCode}: ${JSON.stringify(parsed)}`));
+          } else {
+            resolve(parsed);
+          }
+        } catch { reject(new Error('Invalid JSON from Cashfree')); }
       });
     });
     request.on('error', reject);
