@@ -33,8 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _dobCtrl = TextEditingController();
-  DateTime? _selectedDob;
+  bool _ageConfirmed = false;
   bool _loading = false;
 
   @override
@@ -82,7 +81,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _phoneCtrl.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
-    _dobCtrl.dispose();
     super.dispose();
   }
 
@@ -97,7 +95,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       'expectNewUser': widget.isCreateAccount,
       if (widget.isCreateAccount) 'name': _nameCtrl.text.trim(),
       if (widget.isCreateAccount) 'email': _emailCtrl.text.trim(),
-      if (widget.isCreateAccount) 'dob': _dobCtrl.text.trim(),
     });
 
     setState(() => _loading = false);
@@ -164,7 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  _buildDateField(),
+                  _buildAgeCheckbox(),
                   const SizedBox(height: 16),
                 ],
 
@@ -323,66 +320,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Date of Birth', style: AppTextStyles.labelMedium),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: _selectedDob ?? DateTime(2000),
-              firstDate: DateTime(1940),
-              lastDate: DateTime.now().subtract(const Duration(days: 365 * 18 + 4)),
-              builder: (context, child) => Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.forestGreen,
-                    onPrimary: AppColors.white,
-                    surface: AppColors.background,
+  Widget _buildAgeCheckbox() {
+    return FormField<bool>(
+      initialValue: _ageConfirmed,
+      validator: (_) =>
+          _ageConfirmed ? null : 'Please confirm you are 18 or older',
+      builder: (field) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() => _ageConfirmed = !_ageConfirmed);
+              field.didChange(!_ageConfirmed);
+            },
+            borderRadius: BorderRadius.circular(AppConstants.radiusS),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: _ageConfirmed,
+                  activeColor: AppColors.forestGreen,
+                  side: const BorderSide(color: AppColors.divider),
+                  onChanged: (v) {
+                    setState(() => _ageConfirmed = v ?? false);
+                    field.didChange(v ?? false);
+                  },
+                ),
+                Expanded(
+                  child: Text(
+                    'I confirm I am 18 years of age or older',
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
-                child: child!,
-              ),
-            );
-            if (picked != null) {
-              setState(() {
-                _selectedDob = picked;
-                _dobCtrl.text =
-                    '${picked.day.toString().padLeft(2, '0')}/'
-                    '${picked.month.toString().padLeft(2, '0')}/'
-                    '${picked.year}';
-              });
-            }
-          },
-          child: AbsorbPointer(
-            child: TextFormField(
-              controller: _dobCtrl,
-              readOnly: true,
-              decoration: _inputDecoration('Tap to select').copyWith(
-                suffixIcon: const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 18,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              validator: (_) {
-                if (_selectedDob == null) return 'Please select your date of birth';
-                final today = DateTime.now();
-                final age = today.year - _selectedDob!.year -
-                    ((today.month < _selectedDob!.month ||
-                            (today.month == _selectedDob!.month &&
-                                today.day < _selectedDob!.day))
-                        ? 1
-                        : 0);
-                return age >= 18 ? null : 'You must be 18 or older to register';
-              },
+              ],
             ),
           ),
-        ),
-      ],
+          if (field.hasError)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                field.errorText!,
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.error, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
