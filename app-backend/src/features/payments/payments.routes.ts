@@ -39,7 +39,7 @@ router.post('/create-order', requireAuth, async (req: AuthenticatedRequest, res:
     order_currency: 'INR',
     order_meta: {
       return_url: `https://auramikadaily.com/payment/return?order_id={order_id}`,
-      payment_methods: 'upi,cc,dc,nb,wallets',
+      payment_methods: 'upi,cc,dc,nb,app',
     },
     customer_details: {
       customer_id: `CUST_${req.uid.slice(0, 16)}`,

@@ -1,8 +1,14 @@
 import { Request } from 'express';
 
-export interface AuthenticatedRequest extends Request {
-  uid: string;
+declare global {
+  namespace Express {
+    interface Request {
+      uid: string;
+    }
+  }
 }
+
+export type AuthenticatedRequest = Request;
 
 // ── Product ───────────────────────────────────────────────────────────────────
 export interface Product {
