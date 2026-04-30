@@ -442,7 +442,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => context.pop(),
+                  onTap: () => context.canPop() ? context.pop() : context.go('/cart'),
                   child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
                 ),
                 const SizedBox(width: AppConstants.paddingM),

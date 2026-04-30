@@ -210,6 +210,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // Phone already had a live account — sign out and let them use sign-in.
       if (widget.expectNewUser && !isNewUser) {
         if (kDebugMode) debugPrint('[OTP] signIn → phone already registered, redirecting to sign-in');
+        // Still sync registration data so Firestore doc exists (idempotent if doc already there).
+        _registerWithBackend();
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
         context.go('/auth/login', extra: {
