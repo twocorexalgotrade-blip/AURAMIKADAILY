@@ -296,47 +296,110 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _confirmDeleteAccount(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.background,
-        title: Text('Delete account?', style: AppTextStyles.titleMedium),
-        content: Text(
-          'This will permanently delete your ${AppConstants.appName} account and all associated data. This action cannot be undone.',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        var deleting = false;
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) => AlertDialog(
+            backgroundColor: AppColors.background,
+            title: Text('Delete account?', style: AppTextStyles.titleMedium),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This will permanently delete your ${AppConstants.appName} account and all associated data — orders, addresses, wishlist, cart. This action cannot be undone.',
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                ),
+                if (deleting) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.error),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('Deleting account…',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: deleting ? null : () => Navigator.pop(dialogContext),
+                child: Text('Cancel',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+              ),
+              TextButton(
+                onPressed: deleting ? null : () async {
+                  setLocalState(() => deleting = true);
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    Navigator.pop(dialogContext);
+                    if (context.mounted) context.go('/auth/register');
+                    return;
+                  }
+                  try {
+                    final token = await user.getIdToken();
+                    await Dio().delete(
+                      '${AppConstants.baseUrl}/api/v1/auth/account',
+                      options: Options(
+                        headers: {'Authorization': 'Bearer $token'},
+                        receiveTimeout: const Duration(seconds: 15),
+                      ),
+                    );
+                  } on DioException catch (e) {
+                    if (!ctx.mounted) return;
+                    Navigator.pop(dialogContext);
+                    final body = e.response?.data;
+                    final msg = (body is Map && body['error'] is String)
+                        ? body['error'] as String
+                        : 'Could not delete account. Please check your connection and try again.';
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(msg),
+                        backgroundColor: AppColors.error,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 5),
+                      ));
+                    }
+                    return;
+                  } catch (_) {
+                    if (!ctx.mounted) return;
+                    Navigator.pop(dialogContext);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Could not reach the server. Please try again.'),
+                        backgroundColor: AppColors.error,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                    return;
+                  }
+
+                  // Backend confirmed deletion — purge all local state.
+                  await FirebaseAuth.instance.signOut().catchError((_) {});
+                  ref.read(authProvider.notifier).logout();
+                  ref.read(userProfileProvider.notifier).reset();
+                  ref.read(cartProvider.notifier).clear();
+                  ref.read(wishlistProvider.notifier).clear();
+
+                  if (!ctx.mounted) return;
+                  Navigator.pop(dialogContext);
+                  if (context.mounted) context.go('/auth/register');
+                },
+                child: Text('Delete',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                try {
-                  final token = await user.getIdToken();
-                  await Dio().delete(
-                    '${AppConstants.baseUrl}/api/v1/auth/account',
-                    options: Options(headers: {'Authorization': 'Bearer $token'}),
-                  );
-                } catch (_) {
-                  // Backend deletion failed; proceed with local cleanup.
-                }
-              }
-              ref.read(authProvider.notifier).logout();
-              ref.read(userProfileProvider.notifier).reset();
-              ref.read(cartProvider.notifier).clear();
-              ref.read(wishlistProvider.notifier).clear();
-              if (context.mounted) context.go('/auth/register');
-            },
-            child: Text('Delete',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -361,7 +424,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'When you use the Magic Mirror feature, your outfit photo is sent to OpenAI for jewelry matching. You can withdraw consent at any time — you will be asked again on next use.',
+              'When you use the Magic Mirror feature, your outfit photo is sent to our AI styling service for jewellery matching. You can withdraw consent at any time — you will be asked again on next use.',
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.5),
             ),
           ],

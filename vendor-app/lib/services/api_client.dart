@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,14 +8,9 @@ final secureStorageProvider = Provider<FlutterSecureStorage>(
   (_) => const FlutterSecureStorage(),
 );
 
-final apiClientProvider = Provider<ApiClient>((ref) {
-  final storage = ref.watch(secureStorageProvider);
-  return ApiClient(storage);
-});
-
 class ApiClient {
   final FlutterSecureStorage _storage;
-  final VoidCallback? onUnauthorized;
+  final void Function()? onUnauthorized;
   late final Dio _dio;
 
   ApiClient(this._storage, {this.onUnauthorized}) {
@@ -54,20 +50,21 @@ class ApiClient {
 
   Future<Response<T>> delete<T>(String path) => _dio.delete<T>(path);
 
-  // Raw Dio for S3 presigned uploads (no auth header)
+  // Direct HttpClient PUT to S3 presigned URL (Dio stream approach is unreliable for binary)
   Future<void> putToS3(String presignedUrl, List<int> bytes, String contentType) async {
-    final plainDio = Dio();
-    await plainDio.put(
-      presignedUrl,
-      data: Stream.fromIterable([bytes]),
-      options: Options(
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': bytes.length,
-        },
-        followRedirects: false,
-        validateStatus: (s) => s != null && s < 400,
-      ),
-    );
+    final client = HttpClient();
+    try {
+      final request = await client.putUrl(Uri.parse(presignedUrl));
+      request.headers.set(HttpHeaders.contentTypeHeader, contentType);
+      request.headers.set(HttpHeaders.contentLengthHeader, bytes.length);
+      request.add(bytes);
+      final response = await request.close();
+      await response.drain<void>();
+      if (response.statusCode >= 400) {
+        throw Exception('S3 upload failed: ${response.statusCode}');
+      }
+    } finally {
+      client.close();
+    }
   }
 }

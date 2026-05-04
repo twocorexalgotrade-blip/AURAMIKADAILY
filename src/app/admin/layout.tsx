@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Package, ShoppingBag, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Store, LogOut } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -25,6 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/orders" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors">
             <ShoppingBag className="w-5 h-5" /> Orders
+          </Link>
+          <Link href="/admin/vendors" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors">
+            <Store className="w-5 h-5" /> Vendors
           </Link>
         </nav>
         <div className="p-4 border-t border-neutral-800">

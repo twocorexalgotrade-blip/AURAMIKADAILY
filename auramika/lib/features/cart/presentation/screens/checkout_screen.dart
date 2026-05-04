@@ -23,6 +23,7 @@ import '../../../../shared/widgets/rive_animation_widget.dart';
 import '../../../profile/domain/orders_controller.dart';
 import '../../../profile/domain/user_profile_controller.dart';
 import '../controllers/cart_controller.dart';
+import '../widgets/payment_launch_overlay.dart';
 
 // ── Checkout Screen ───────────────────────────────────────────────────────────
 /// Address → Payment → Order Summary → Pay
@@ -69,6 +70,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String? _pendingImageAsset;
   String? _pendingDate;
 
+  // Full-screen launch animation shown from Pay tap until Cashfree opens.
+  OverlayEntry? _launchOverlay;
+
+  void _showLaunchOverlay(double total) {
+    _launchOverlay?.remove();
+    _launchOverlay = OverlayEntry(
+      builder: (_) => PaymentLaunchOverlay(total: total),
+    );
+    Overlay.of(context, rootOverlay: true).insert(_launchOverlay!);
+  }
+
+  void _hideLaunchOverlay() {
+    _launchOverlay?.remove();
+    _launchOverlay = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +101,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   void dispose() {
+    _hideLaunchOverlay();
     _pinCtrl.removeListener(_onPinChanged);
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
@@ -234,8 +252,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _pay() async {
+    debugPrint('[Checkout] 👆 PAY tapped  payment=$_payment  isExpress=$_isExpress');
     if (!_validateAddress()) return;
     setState(() => _paying = true);
+
+    // Cart total drives the overlay copy — show overlay immediately so the
+    // wait feels intentional, not stuck.
+    final cartSnapshot   = ref.read(cartProvider);
+    final overlayTotal   = cartSnapshot.subtotal + (_isExpress ? 0.0 : 49.0);
+    if (_payment == _PaymentMethod.cashfree) _showLaunchOverlay(overlayTotal);
+
     try {
       final cart  = ref.read(cartProvider);
       final now   = DateTime.now();
@@ -250,13 +276,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       if (_payment == _PaymentMethod.cashfree) {
         // ── Online payment via Cashfree (routed through backend) ─────
+        // Only send productId + quantity — backend hydrates price server-side.
         final backendItems = cart.items.map((i) => {
           'productId': i.productId,
-          'productName': i.productName,
-          'brandName': i.brandName,
-          'price': i.price,
           'quantity': i.quantity,
-          if (i.imageUrl != null) 'imageUrl': i.imageUrl!,
         }).toList();
 
         final address = {
@@ -267,6 +290,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           'pincode': _pinCtrl.text.trim(),
         };
 
+        debugPrint('[Checkout] 🛒 Cashfree pay  items=${backendItems.length}  address=$address');
+
         final result = await _cashfreeService.createOrderAndGetSession(
           items: backendItems,
           address: address,
@@ -274,6 +299,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           customerName: _nameCtrl.text.trim(),
           customerPhone: _phoneCtrl.text.trim(),
         );
+
+        debugPrint('[Checkout] ✅ session: orderId=${result.orderId}  total=${result.total}  isMock=${result.isMock}  isTestMode=${result.isTestMode}');
 
         // Snapshot for SDK callbacks; total from backend is the source of truth.
         _pendingOrderId     = result.orderId;
@@ -285,13 +312,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
         // Mock mode: backend already confirmed the order — skip the SDK.
         if (result.isMock) {
+          debugPrint('[Checkout] 🧪 mock mode — finalizing directly');
           _finalizeOrder(result.orderId, productName, result.total,
               cart.totalItems, firstItem?.imageUrl, dateStr);
           return;
         }
 
+        // Force SANDBOX — test mode is on until go-live.
+        const cfEnv = CFEnvironment.SANDBOX;
+        debugPrint('[Checkout] 🚀 launching CFWebCheckout  env=SANDBOX  sessionId=${result.sessionId.substring(0, result.sessionId.length.clamp(0, 40))}');
+
         final session = CFSessionBuilder()
-            .setEnvironment((AppConstants.cashfreeTestMode || result.isTestMode) ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION)
+            .setEnvironment(cfEnv)
             .setPaymentSessionId(result.sessionId)
             .setOrderId(result.orderId)
             .build();
@@ -308,6 +340,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             .setTheme(theme)
             .build();
 
+        debugPrint('[Checkout] 📲 calling doPayment()');
+        // Re-register callbacks immediately before doPayment() — the SDK
+        // singleton callbacks can be clobbered by other navigations.
+        CFPaymentGatewayService().setCallback(_onPaymentVerify, _onCashfreeError);
+        // Hand off to Cashfree. doPayment() returns instantly but the native
+        // webview takes ~500ms-2s to actually appear. Leave the overlay UP so
+        // the user sees the loading animation continuously instead of a flash
+        // back to the checkout form. The overlay sits underneath Cashfree's
+        // own full-screen webview once it opens, so it's invisible during
+        // payment. _onPaymentVerify / _onCashfreeError dismiss it on return.
         CFPaymentGatewayService().doPayment(webPayment);
         // SDK takes over; result handled in _onPaymentVerify / _onCashfreeError.
         return;
@@ -319,7 +361,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       await Future.delayed(const Duration(milliseconds: 1800));
       if (!mounted) return;
       _finalizeOrder(orderId, productName, total, cart.totalItems, firstItem?.imageUrl, dateStr);
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[Checkout] ❌ _pay() threw: $e');
+      debugPrint('[Checkout] ❌ stacktrace: $st');
+      _hideLaunchOverlay();
       if (mounted) {
         final msg = _friendlyPaymentError(e);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -368,8 +413,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   // ── Cashfree SDK callbacks ────────────────────────────────────────────────
 
   void _onPaymentVerify(String orderId) {
-    // Defer to next frame — Cashfree callbacks fire as the native screen unwinds
-    // and the Flutter context is not yet fully resumed.
+    debugPrint('[Checkout] 🎉 _onPaymentVerify called  orderId=$orderId  pending=$_pendingOrderId');
+    _hideLaunchOverlay();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _paying = false);
@@ -407,6 +452,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   void _onCashfreeError(CFErrorResponse errorResponse, String orderId) {
+    debugPrint('[Checkout] ❌ _onCashfreeError  orderId=$orderId  status=${errorResponse.getStatus()}  code=${errorResponse.getCode()}  msg=${errorResponse.getMessage()}');
+    _hideLaunchOverlay();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _paying = false);
@@ -887,7 +934,23 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 ),
                 child: Center(
                   child: _paying
-                      ? const RiveLoadingRing(size: 28, color: AppColors.gold)
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const RiveLoadingRing(size: 22, color: AppColors.gold),
+                            const SizedBox(width: 12),
+                            Text(
+                              _payment == _PaymentMethod.cashfree
+                                  ? 'SECURING PAYMENT…'
+                                  : 'PLACING ORDER…',
+                              style: AppTextStyles.categoryChip.copyWith(
+                                color: AppColors.white,
+                                fontSize: 12,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

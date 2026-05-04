@@ -56,7 +56,7 @@ const _initialOrders = [
   OrderModel(
     id: 'ORD-2025-004',
     productName: 'Gold Link Bracelet',
-    imageAsset: 'assets/images/products/b2_gold_link.png',
+    imageAsset: 'assets/images/products/b2_gold_link.jpg',
     total: 699,
     date: '20 Feb 2025',
     status: OrderStatus.processing,
@@ -65,7 +65,7 @@ const _initialOrders = [
   OrderModel(
     id: 'ORD-2025-003',
     productName: 'Kundan Chandbali',
-    imageAsset: 'assets/images/products/e8_kundan_chandbali.png',
+    imageAsset: 'assets/images/products/e8_kundan_chandbali.jpg',
     total: 1299,
     date: '5 Feb 2025',
     status: OrderStatus.inTransit,
@@ -74,7 +74,7 @@ const _initialOrders = [
   OrderModel(
     id: 'ORD-2025-002',
     productName: 'Heavy Temple Necklace',
-    imageAsset: 'assets/images/products/n12_temple_neck.png',
+    imageAsset: 'assets/images/products/n12_temple_neck.jpg',
     total: 2499,
     date: '28 Dec 2024',
     status: OrderStatus.delivered,
@@ -83,7 +83,7 @@ const _initialOrders = [
   OrderModel(
     id: 'ORD-2025-001',
     productName: 'Pearl Choker',
-    imageAsset: 'assets/images/products/n4_pearl_choker.png',
+    imageAsset: 'assets/images/products/n4_pearl_choker.jpg',
     total: 599,
     date: '15 Jan 2025',
     status: OrderStatus.delivered,

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 
 class PaymentSessionResult {
@@ -26,8 +27,11 @@ class CashfreeService {
 
   Future<String> _getIdToken() async {
     final user = FirebaseAuth.instance.currentUser;
+    debugPrint('[CF] 🔐 currentUser=${user?.uid ?? "NULL — not signed in"}');
     if (user == null) throw Exception('Please sign in before placing an order.');
-    return user.getIdToken().then((t) => t!);
+    final token = await user.getIdToken();
+    debugPrint('[CF] 🔐 idToken obtained (first 30): ${token!.substring(0, 30)}…');
+    return token;
   }
 
   /// Creates a backend order and returns a Cashfree payment session.
@@ -40,44 +44,56 @@ class CashfreeService {
     required String customerName,
     required String customerPhone,
   }) async {
+    debugPrint('[CF] ── createOrderAndGetSession START ──');
+    debugPrint('[CF] baseUrl=${AppConstants.baseUrl}');
+    debugPrint('[CF] items count=${items.length}  isExpress=$isExpress');
+
     final token = await _getIdToken();
     final authHeaders = {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
 
-    // Step 1: Create order record in backend → get orderId + server-side total.
-    final orderRes = await _dio.post(
-      '${AppConstants.baseUrl}/api/v1/orders',
-      data: {
-        'items': items,
-        'address': address,
-        'isExpress': isExpress,
-      },
-      options: Options(headers: authHeaders),
-    );
+    // Single call: backend creates the order AND the Cashfree session in one
+    // round trip. Saves ~150-300ms vs. the legacy 2-step /orders → /payments
+    // flow.
+    final payload = {
+      'items': items,
+      'address': address,
+      'isExpress': isExpress,
+      'customerName': customerName.isNotEmpty ? customerName : 'Customer',
+      'customerPhone': customerPhone.isNotEmpty ? customerPhone : '9999999999',
+    };
+    debugPrint('[CF] POST /api/v1/payments/start  payload=$payload');
 
-    final orderId = orderRes.data['orderId'] as String;
-    final total = (orderRes.data['total'] as num).toDouble();
+    late Response res;
+    try {
+      res = await _dio.post(
+        '${AppConstants.baseUrl}/api/v1/payments/start',
+        data: payload,
+        options: Options(headers: authHeaders),
+      );
+      debugPrint('[CF] response ${res.statusCode}: ${res.data}');
+    } on DioException catch (e) {
+      debugPrint('[CF] DioException: ${e.type}  status=${e.response?.statusCode}  body=${e.response?.data}  msg=${e.message}');
+      rethrow;
+    }
 
-    // Step 2: Ask backend to create a Cashfree order → get payment_session_id.
-    final paymentRes = await _dio.post(
-      '${AppConstants.baseUrl}/api/v1/payments/create-order',
-      data: {
-        'orderId': orderId,
-        'customerName': customerName.isNotEmpty ? customerName : 'Customer',
-        'customerPhone': customerPhone.isNotEmpty ? customerPhone : '9999999999',
-      },
-      options: Options(headers: authHeaders),
-    );
+    final orderId   = res.data['orderId'] as String;
+    final total     = (res.data['total'] as num).toDouble();
+    final isMock    = res.data['isMock'] as bool? ?? false;
+    final sessionId = res.data['paymentSessionId'] as String? ?? '';
+    final mode      = res.data['mode'] as String? ?? '?';
 
-    final isMock = paymentRes.data['isMock'] as bool? ?? false;
-    final sessionId = paymentRes.data['paymentSessionId'] as String? ?? '';
+    debugPrint('[CF] orderId=$orderId  total=$total  isMock=$isMock  mode=$mode');
+
     if (!isMock && sessionId.isEmpty) {
+      debugPrint('[CF] ❌ No payment session ID — aborting');
       throw Exception('No payment session ID returned from server.');
     }
 
-    final isTestMode = (paymentRes.data['mode'] as String?) != 'PROD';
+    final isTestMode = mode != 'PROD';
+    debugPrint('[CF] ── createOrderAndGetSession DONE  isTestMode=$isTestMode ──');
 
     return PaymentSessionResult(
       orderId: orderId,

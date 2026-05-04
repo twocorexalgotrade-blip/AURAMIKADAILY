@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
-import '../services/api_client.dart';
+import 'auth_provider.dart';
 
 final productsProvider = AsyncNotifierProvider<ProductsNotifier, List<Product>>(
   () => ProductsNotifier(),

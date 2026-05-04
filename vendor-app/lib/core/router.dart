@@ -16,7 +16,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) {
       if (authState.isLoading) return null;
-      final isLoggedIn = authState.value != null;
+      final isLoggedIn = authState.valueOrNull != null;
       final isLoginRoute = state.matchedLocation == '/login';
       if (!isLoggedIn && !isLoginRoute) return '/login';
       if (isLoggedIn && isLoginRoute) return '/';

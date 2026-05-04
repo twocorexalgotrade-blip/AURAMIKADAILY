@@ -35,6 +35,15 @@ export async function runMigrations() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS vendor_credentials (
+      id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      vendor_id TEXT NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      last_login TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
       vendor_id TEXT REFERENCES vendors(id) ON DELETE SET NULL,

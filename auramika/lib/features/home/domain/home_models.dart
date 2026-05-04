@@ -111,7 +111,7 @@ abstract class HomeData {
       price: 499,
       material: 'Gold Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/e1_gold_hoops.png',
+      imageUrl: 'assets/images/products/e1_gold_hoops.jpg',
     ),
     HomeProduct(
       id: 'e2',
@@ -120,7 +120,7 @@ abstract class HomeData {
       price: 899,
       material: 'Silver / Diamond',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/e2_crystal_drop.png',
+      imageUrl: 'assets/images/products/e2_crystal_drop.jpg',
     ),
     HomeProduct(
       id: 'e3',
@@ -129,7 +129,7 @@ abstract class HomeData {
       price: 299,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/e3_pearl_studs.png',
+      imageUrl: 'assets/images/products/e3_pearl_studs.jpg',
     ),
     HomeProduct(
       id: 'e4',
@@ -138,7 +138,7 @@ abstract class HomeData {
       price: 649,
       material: 'Antique Gold',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/e4_coin_dangle.png',
+      imageUrl: 'assets/images/products/e4_coin_dangle.jpg',
     ),
     HomeProduct(
       id: 'e5',
@@ -147,7 +147,7 @@ abstract class HomeData {
       price: 599,
       material: 'Silver / Zircon',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/e5_emerald_studs.png',
+      imageUrl: 'assets/images/products/e5_emerald_studs.jpg',
     ),
     HomeProduct(
       id: 'e6',
@@ -156,7 +156,7 @@ abstract class HomeData {
       price: 399,
       material: 'Rose Gold',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/e6_rose_huggies.png',
+      imageUrl: 'assets/images/products/e6_rose_huggies.jpg',
     ),
     HomeProduct(
       id: 'e7',
@@ -165,7 +165,7 @@ abstract class HomeData {
       price: 449,
       material: 'Silver Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/e7_geo_hoops.png',
+      imageUrl: 'assets/images/products/e7_geo_hoops.jpg',
     ),
     HomeProduct(
       id: 'e8',
@@ -174,7 +174,7 @@ abstract class HomeData {
       price: 1299,
       material: 'Gold Plated',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/e8_kundan_chandbali.png',
+      imageUrl: 'assets/images/products/e8_kundan_chandbali.jpg',
     ),
     HomeProduct(
       id: 'e9',
@@ -183,7 +183,7 @@ abstract class HomeData {
       price: 549,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/e9_chain_drop.png',
+      imageUrl: 'assets/images/products/e9_chain_drop.jpg',
     ),
     HomeProduct(
       id: 'e10',
@@ -192,7 +192,7 @@ abstract class HomeData {
       price: 349,
       material: 'Silver / Zircon',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/e10_heart_studs.png',
+      imageUrl: 'assets/images/products/e10_heart_studs.jpg',
     ),
     HomeProduct(
       id: 'e11',
@@ -201,7 +201,7 @@ abstract class HomeData {
       price: 799,
       material: 'Matte Gold',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/e11_matte_statement.png',
+      imageUrl: 'assets/images/products/e11_matte_statement.jpg',
     ),
     HomeProduct(
       id: 'e12',
@@ -210,7 +210,7 @@ abstract class HomeData {
       price: 249,
       material: 'Silver Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/e12_silver_threaders.png',
+      imageUrl: 'assets/images/products/e12_silver_threaders.jpg',
     ),
     HomeProduct(
       id: 'e13',
@@ -219,7 +219,7 @@ abstract class HomeData {
       price: 999,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/e13_baroque_pearl.png',
+      imageUrl: 'assets/images/products/e13_baroque_pearl.jpg',
     ),
     HomeProduct(
       id: 'e14',
@@ -228,7 +228,7 @@ abstract class HomeData {
       price: 599,
       material: 'Gold Plated',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/e14_rainbow_hoops.png',
+      imageUrl: 'assets/images/products/e14_rainbow_hoops.jpg',
     ),
     HomeProduct(
       id: 'e15',
@@ -249,7 +249,7 @@ abstract class HomeData {
       price: 699,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/n1_herringbone.png',
+      imageUrl: 'assets/images/products/n1_herringbone.jpg',
     ),
     HomeProduct(
       id: 'n2',
@@ -258,7 +258,7 @@ abstract class HomeData {
       price: 1499,
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/n2_tennis_neck.png',
+      imageUrl: 'assets/images/products/n2_tennis_neck.jpg',
     ),
     HomeProduct(
       id: 'n3',
@@ -267,7 +267,7 @@ abstract class HomeData {
       price: 799,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/n3_layered_coin.png',
+      imageUrl: 'assets/images/products/n3_layered_coin.jpg',
     ),
     HomeProduct(
       id: 'n4',
@@ -276,7 +276,7 @@ abstract class HomeData {
       price: 599,
       material: 'Faux Pearl',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/n4_pearl_choker.png',
+      imageUrl: 'assets/images/products/n4_pearl_choker.jpg',
     ),
     HomeProduct(
       id: 'n5',
@@ -285,7 +285,7 @@ abstract class HomeData {
       price: 399,
       material: 'Gold Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/n5_initial_pendant.png',
+      imageUrl: 'assets/images/products/n5_initial_pendant.jpg',
     ),
     HomeProduct(
       id: 'n6',
@@ -294,7 +294,7 @@ abstract class HomeData {
       price: 449,
       material: 'Silver / Enamel',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/n6_evil_eye.png',
+      imageUrl: 'assets/images/products/n6_evil_eye.jpg',
     ),
     HomeProduct(
       id: 'n7',
@@ -303,7 +303,7 @@ abstract class HomeData {
       price: 899,
       material: 'Rose Gold',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/n7_y_necklace.png',
+      imageUrl: 'assets/images/products/n7_y_necklace.jpg',
     ),
     HomeProduct(
       id: 'n8',
@@ -312,7 +312,7 @@ abstract class HomeData {
       price: 999,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/n8_curb_chain.png',
+      imageUrl: 'assets/images/products/n8_curb_chain.jpg',
     ),
     HomeProduct(
       id: 'n9',
@@ -321,7 +321,7 @@ abstract class HomeData {
       price: 549,
       material: 'Silver Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/n9_snake_chain.png',
+      imageUrl: 'assets/images/products/n9_snake_chain.jpg',
     ),
     HomeProduct(
       id: 'n10',
@@ -330,7 +330,7 @@ abstract class HomeData {
       price: 699,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/n10_emerald_pendant.png',
+      imageUrl: 'assets/images/products/n10_emerald_pendant.jpg',
     ),
     HomeProduct(
       id: 'n11',
@@ -339,7 +339,7 @@ abstract class HomeData {
       price: 499,
       material: 'Rose Gold',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/n11_butterfly.png',
+      imageUrl: 'assets/images/products/n11_butterfly.jpg',
     ),
     HomeProduct(
       id: 'n12',
@@ -348,7 +348,7 @@ abstract class HomeData {
       price: 2499,
       material: 'Antique Gold',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/n12_temple_neck.png',
+      imageUrl: 'assets/images/products/n12_temple_neck.jpg',
     ),
     HomeProduct(
       id: 'n13',
@@ -357,7 +357,7 @@ abstract class HomeData {
       price: 649,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/n13_paperclip.png',
+      imageUrl: 'assets/images/products/n13_paperclip.jpg',
     ),
     HomeProduct(
       id: 'n14',
@@ -366,7 +366,7 @@ abstract class HomeData {
       price: 399,
       material: 'Gold Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/n14_mangalsutra.png',
+      imageUrl: 'assets/images/products/n14_mangalsutra.jpg',
     ),
     HomeProduct(
       id: 'n15',
@@ -375,7 +375,7 @@ abstract class HomeData {
       price: 1999,
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/n15_zircon_choker.png',
+      imageUrl: 'assets/images/products/n15_zircon_choker.jpg',
     ),
 
 
@@ -387,7 +387,7 @@ abstract class HomeData {
       price: 499,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/r1_signet.png',
+      imageUrl: 'assets/images/products/r1_signet.jpg',
     ),
     HomeProduct(
       id: 'r2',
@@ -396,7 +396,7 @@ abstract class HomeData {
       price: 599,
       material: 'Silver / Zircon',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/r2_solitaire.png',
+      imageUrl: 'assets/images/products/r2_solitaire.jpg',
     ),
     HomeProduct(
       id: 'r3',
@@ -405,7 +405,7 @@ abstract class HomeData {
       price: 399,
       material: 'Rose Gold',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/r3_stack_set.png',
+      imageUrl: 'assets/images/products/r3_stack_set.jpg',
     ),
     HomeProduct(
       id: 'r4',
@@ -414,7 +414,7 @@ abstract class HomeData {
       price: 549,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/r4_abstract_ring.png',
+      imageUrl: 'assets/images/products/r4_abstract_ring.jpg',
     ),
     HomeProduct(
       id: 'r5',
@@ -423,7 +423,7 @@ abstract class HomeData {
       price: 899,
       material: 'Gold / Ruby',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/r5_cocktail_ring.png',
+      imageUrl: 'assets/images/products/r5_cocktail_ring.jpg',
     ),
     HomeProduct(
       id: 'r6',
@@ -432,7 +432,7 @@ abstract class HomeData {
       price: 449,
       material: 'Gold / Pearl',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/r6_pearl_ring.png',
+      imageUrl: 'assets/images/products/r6_pearl_ring.jpg',
     ),
     HomeProduct(
       id: 'r7',
@@ -441,7 +441,7 @@ abstract class HomeData {
       price: 499,
       material: 'Antique Silver',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/r7_serpent_ring.png',
+      imageUrl: 'assets/images/products/r7_serpent_ring.jpg',
     ),
     HomeProduct(
       id: 'r8',
@@ -450,7 +450,7 @@ abstract class HomeData {
       price: 699,
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/r8_eternity_band.png',
+      imageUrl: 'assets/images/products/r8_eternity_band.jpg',
     ),
     HomeProduct(
       id: 'r9',
@@ -459,7 +459,7 @@ abstract class HomeData {
       price: 399,
       material: 'Gold Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/r9_heart_signet.png',
+      imageUrl: 'assets/images/products/r9_heart_signet.jpg',
     ),
     HomeProduct(
       id: 'r10',
@@ -468,7 +468,7 @@ abstract class HomeData {
       price: 299,
       material: 'Gold / Enamel',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/r10_adjust_eye.png',
+      imageUrl: 'assets/images/products/r10_adjust_eye.jpg',
     ),
 
     // ── BRACELETS (41-50) ─────────────────────────────────────────────────
@@ -479,7 +479,7 @@ abstract class HomeData {
       price: 999,
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/b1_tennis_bracelet.png',
+      imageUrl: 'assets/images/products/b1_tennis_bracelet.jpg',
     ),
     HomeProduct(
       id: 'b2',
@@ -488,7 +488,7 @@ abstract class HomeData {
       price: 699,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/b2_gold_link.png',
+      imageUrl: 'assets/images/products/b2_gold_link.jpg',
     ),
     HomeProduct(
       id: 'b3',
@@ -497,7 +497,7 @@ abstract class HomeData {
       price: 799,
       material: 'Rose Gold',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/b3_charm_bracelet.png',
+      imageUrl: 'assets/images/products/b3_charm_bracelet.jpg',
     ),
     HomeProduct(
       id: 'b4',
@@ -506,7 +506,7 @@ abstract class HomeData {
       price: 599,
       material: 'Gold Plated',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/b4_cuff_bangle.png',
+      imageUrl: 'assets/images/products/b4_cuff_bangle.jpg',
     ),
     HomeProduct(
       id: 'b5',
@@ -515,7 +515,7 @@ abstract class HomeData {
       price: 499,
       material: 'Leather / Silver',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/b5_leather_band.png',
+      imageUrl: 'assets/images/products/b5_leather_band.jpg',
     ),
     HomeProduct(
       id: 'b6',
@@ -524,7 +524,7 @@ abstract class HomeData {
       price: 349,
       material: 'Silver / Enamel',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/b6_evil_eye_brace.png',
+      imageUrl: 'assets/images/products/b6_evil_eye_brace.jpg',
     ),
     HomeProduct(
       id: 'b7',
@@ -533,7 +533,7 @@ abstract class HomeData {
       price: 549,
       material: 'Faux Pearl',
       vibe: 'Old Money',
-      imageUrl: 'assets/images/products/b7_pearl_bracelet.png',
+      imageUrl: 'assets/images/products/b7_pearl_bracelet.jpg',
     ),
     HomeProduct(
       id: 'b8',
@@ -542,7 +542,7 @@ abstract class HomeData {
       price: 1499,
       material: 'Gold / Zircon',
       vibe: 'Party / Glam',
-      imageUrl: 'assets/images/products/b8_zircon_bangles.png',
+      imageUrl: 'assets/images/products/b8_zircon_bangles.jpg',
     ),
     HomeProduct(
       id: 'b9',
@@ -551,7 +551,7 @@ abstract class HomeData {
       price: 299,
       material: 'Silver Plated',
       vibe: 'Daily Minimalist',
-      imageUrl: 'assets/images/products/b9_min_chain.png',
+      imageUrl: 'assets/images/products/b9_min_chain.jpg',
     ),
     HomeProduct(
       id: 'b10',
@@ -560,7 +560,7 @@ abstract class HomeData {
       price: 799,
       material: 'Gold Plated',
       vibe: 'Street Wear',
-      imageUrl: 'assets/images/products/b10_curb_brace.png',
+      imageUrl: 'assets/images/products/b10_curb_brace.jpg',
     ),
 
     // ── STREET WEAR DROPS (sw1–sw8) ───────────────────────────────────────
@@ -572,7 +572,7 @@ abstract class HomeData {
       material: 'Gold Plated',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/n8_curb_chain.png',
+      imageUrl: 'assets/images/products/n8_curb_chain.jpg',
     ),
     HomeProduct(
       id: 'sw2',
@@ -582,7 +582,7 @@ abstract class HomeData {
       material: 'Silver Plated',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/e7_geo_hoops.png',
+      imageUrl: 'assets/images/products/e7_geo_hoops.jpg',
     ),
     HomeProduct(
       id: 'sw3',
@@ -592,7 +592,7 @@ abstract class HomeData {
       material: 'Black / Silver',
       vibe: 'Street Wear',
       isExpressAvailable: false,
-      imageUrl: 'assets/images/products/n15_zircon_choker.png',
+      imageUrl: 'assets/images/products/n15_zircon_choker.jpg',
     ),
     HomeProduct(
       id: 'sw4',
@@ -602,7 +602,7 @@ abstract class HomeData {
       material: 'Antique Silver',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/r4_abstract_ring.png',
+      imageUrl: 'assets/images/products/r4_abstract_ring.jpg',
     ),
     HomeProduct(
       id: 'sw5',
@@ -612,7 +612,7 @@ abstract class HomeData {
       material: 'Gold Plated',
       vibe: 'Street Wear',
       isExpressAvailable: false,
-      imageUrl: 'assets/images/products/n3_layered_coin.png',
+      imageUrl: 'assets/images/products/n3_layered_coin.jpg',
     ),
     HomeProduct(
       id: 'sw6',
@@ -622,7 +622,7 @@ abstract class HomeData {
       material: 'Gold Plated',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/b10_curb_brace.png',
+      imageUrl: 'assets/images/products/b10_curb_brace.jpg',
     ),
     HomeProduct(
       id: 'sw7',
@@ -642,7 +642,7 @@ abstract class HomeData {
       material: 'Silver Plated',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/e1_gold_hoops.png',
+      imageUrl: 'assets/images/products/e1_gold_hoops.jpg',
     ),
   ];
 
@@ -656,7 +656,7 @@ abstract class HomeData {
       material: 'Gold Plated',
       vibe: 'Daily Minimalist',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/e1_gold_hoops.png',
+      imageUrl: 'assets/images/products/e1_gold_hoops.jpg',
     ),
     HomeProduct(
       id: 'n2',
@@ -666,7 +666,7 @@ abstract class HomeData {
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
       isExpressAvailable: false,
-      imageUrl: 'assets/images/products/n2_tennis_neck.png',
+      imageUrl: 'assets/images/products/n2_tennis_neck.jpg',
     ),
     HomeProduct(
       id: 'r1',
@@ -676,7 +676,7 @@ abstract class HomeData {
       material: 'Gold Plated',
       vibe: 'Old Money',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/r1_signet.png',
+      imageUrl: 'assets/images/products/r1_signet.jpg',
     ),
     HomeProduct(
       id: 'b1',
@@ -686,7 +686,7 @@ abstract class HomeData {
       material: 'Silver / Zircon',
       vibe: 'Party / Glam',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/b1_tennis_bracelet.png',
+      imageUrl: 'assets/images/products/b1_tennis_bracelet.jpg',
     ),
     HomeProduct(
       id: 'e4',
@@ -696,7 +696,7 @@ abstract class HomeData {
       material: 'Antique Gold',
       vibe: 'Street Wear',
       isExpressAvailable: true,
-      imageUrl: 'assets/images/products/e4_coin_dangle.png',
+      imageUrl: 'assets/images/products/e4_coin_dangle.jpg',
     ),
   ];
 }

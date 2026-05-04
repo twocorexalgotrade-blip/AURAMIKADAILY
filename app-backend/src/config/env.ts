@@ -57,6 +57,18 @@ export const env = {
     apiKey: process.env['OPENAI_API_KEY'] ?? '',
   },
 
+  vendor: {
+    jwtSecret: process.env['VENDOR_JWT_SECRET'] ?? 'change-me-in-production',
+    jwtExpiresIn: '30d',
+  },
+
+  aws: {
+    accessKeyId: process.env['AWS_ACCESS_KEY_ID'] ?? '',
+    secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'] ?? '',
+    region: process.env['AWS_REGION'] ?? 'ap-south-1',
+    s3Bucket: process.env['AWS_S3_BUCKET'] ?? '',
+  },
+
   adminUids: (process.env['ADMIN_UIDS'] ?? '').split(',').filter(Boolean),
 
   databaseUrl: required('DATABASE_URL'),

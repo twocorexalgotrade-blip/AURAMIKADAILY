@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -84,11 +85,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _proceed() {
+  /// Calls the backend to check whether a phone is already registered.
+  /// Returns null if the request fails (network blip etc.) — caller should
+  /// fall through to OTP rather than blocking the user on a backend hiccup.
+  Future<bool?> _phoneAlreadyRegistered(String phone) async {
+    try {
+      final res = await Dio().post(
+        '${AppConstants.baseUrl}/api/v1/auth/check-phone',
+        data: {'phone': phone},
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          receiveTimeout: const Duration(seconds: 6),
+          sendTimeout: const Duration(seconds: 6),
+        ),
+      );
+      return (res.data['exists'] as bool?) ?? false;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _proceed() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
     final phone = '+91${_phoneCtrl.text.trim()}';
+
+    // Pre-flight: check phone existence so we don't burn an SMS sending OTP
+    // to a number that's already registered (or not registered, on login).
+    final exists = await _phoneAlreadyRegistered(phone);
+    if (!mounted) return;
+
+    if (exists == true && widget.isCreateAccount) {
+      setState(() => _loading = false);
+      _showPhoneTakenDialog(phone);
+      return;
+    }
+    if (exists == false && !widget.isCreateAccount) {
+      setState(() => _loading = false);
+      _showPhoneNotFoundDialog(phone);
+      return;
+    }
+
+    if (!mounted) return;
     context.push('/auth/otp', extra: {
       'phone': phone,
       'redirect': widget.redirectPath ?? '/',
@@ -98,6 +137,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     setState(() => _loading = false);
+  }
+
+  void _showPhoneTakenDialog(String phone) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.background,
+        title: Text('Number already registered', style: AppTextStyles.titleMedium),
+        content: Text(
+          'An account with $phone already exists. Sign in instead — no SMS will be sent until you confirm.',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/auth/login', extra: {
+                'redirect': widget.redirectPath,
+                'phone': phone,
+              });
+            },
+            child: Text('Sign In',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.forestGreen)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPhoneNotFoundDialog(String phone) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.background,
+        title: Text('No account found', style: AppTextStyles.titleMedium),
+        content: Text(
+          'No account is registered with $phone. Create an account to continue.',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/auth/register', extra: {
+                'redirect': widget.redirectPath,
+                'phone': phone,
+              });
+            },
+            child: Text('Create Account',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.forestGreen)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -2,6 +2,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- image_picker: photo gallery (Android 13+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- image_picker: photo gallery (Android ≤ 12) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- image_picker: camera capture -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="Auramika Daily"
         android:name="${applicationName}"

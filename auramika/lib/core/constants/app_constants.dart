@@ -35,11 +35,12 @@ abstract class AppConstants {
 
   // ── Cashfree ──────────────────────────────────────────────────────────────
   // Set to true to force Cashfree sandbox (test) mode regardless of backend.
-  static const bool cashfreeTestMode = false;
+  static const bool cashfreeTestMode = true;
 
   // ── API ───────────────────────────────────────────────────────────────────
-  // Update to your Render backend URL (Render dashboard → service → URL).
-  static const String baseUrl = 'https://auramikadaily.com';
+  // Backend Render service. NOT auramikadaily.com — that domain serves the
+  // Next.js website. Hitting it returns HTML 404s on /api/v1/* routes.
+  static const String baseUrl = 'https://auramikadaily-appbackend.onrender.com';
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
 

@@ -56,15 +56,95 @@ router.post('/chat', requireAuth, async (req: AuthenticatedRequest, res: Respons
   res.json({ reply, remainingToday: Math.max(0, DAILY_REQUEST_LIMIT - todayCount) });
 });
 
+// ── /stylist/recommend  — Magic Mirror image-based recommendation ──────────
+//
+// Replaces the old client-side OpenAI call. Keeps the API key on the server
+// and reuses the same daily rate limit as /chat.
+const RecommendSchema = z.object({
+  imageBase64: z.string().min(100).max(5_500_000),  // ~4MB image cap
+  catalog: z.array(z.object({
+    id:       z.string().min(1),
+    name:     z.string().optional().default(''),
+    material: z.string().optional().default(''),
+    price:    z.number().optional().default(0),
+    vibe:     z.string().optional().default(''),
+    gender:   z.enum(['M', 'F', 'U']),
+  })).min(1).max(100),
+});
+
+const RECOMMEND_PROMPT = `You are a high-end fashion stylist for AURAMIKA, a luxury Indian jewelry brand.
+
+STEP 1 — Detect gender presentation: Look at the person in the image and determine their gender presentation: M (male), F (female), or U (unclear/non-binary).
+
+STEP 2 — Filter catalog:
+  • If M → only consider products where gender is "M" or "U"
+  • If F → only consider products where gender is "F" or "U"
+  • If U → consider all products
+
+STEP 3 — Select: From the filtered products, pick the SINGLE item that best complements the outfit style, colors, and occasion.
+
+Return ONLY the product ID as a plain string. No markdown, no JSON, no explanation.`;
+
+router.post('/recommend', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  if (!env.openai.apiKey) throw new AppError(503, 'AI Stylist is not configured');
+
+  const parsed = RecommendSchema.safeParse(req.body);
+  if (!parsed.success) throw new AppError(400, parsed.error.issues[0]?.message ?? 'Invalid body');
+
+  // Same rate-limit table as /chat — image calls are pricier so each counts.
+  const usageRes = await pool.query<{ requests: number }>(
+    `INSERT INTO stylist_usage (user_uid, day, requests)
+     VALUES ($1, CURRENT_DATE, 1)
+     ON CONFLICT (user_uid, day) DO UPDATE
+       SET requests = stylist_usage.requests + 1
+     RETURNING requests`,
+    [req.uid],
+  );
+  const todayCount = usageRes.rows[0]?.requests ?? 1;
+  if (todayCount > DAILY_REQUEST_LIMIT) {
+    throw new AppError(429, `Daily AI stylist limit reached (${DAILY_REQUEST_LIMIT}/day). Try again tomorrow.`);
+  }
+
+  const { imageBase64, catalog } = parsed.data;
+  const catalogJson = JSON.stringify(catalog);
+
+  const messages = [
+    { role: 'system', content: RECOMMEND_PROMPT },
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: `Analyze the outfit and recommend one jewelry piece. Catalog: ${catalogJson}` },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+      ],
+    },
+  ];
+
+  const replyRaw = await openAIRaw({ model: 'gpt-4o', messages, max_tokens: 50 });
+  const productId = replyRaw.trim();
+  const valid = catalog.some(p => p.id === productId);
+
+  res.json({
+    productId: valid ? productId : null,
+    remainingToday: Math.max(0, DAILY_REQUEST_LIMIT - todayCount),
+  });
+});
+
 function openAIChat(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
 ): Promise<string> {
-  const payload = JSON.stringify({
+  return openAIRaw({
     model: 'gpt-4o-mini',
     messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
     max_tokens: 300,
     temperature: 0.7,
   });
+}
+
+// Low-level OpenAI chat-completions caller — accepts arbitrary payload so
+// vision messages (image_url content blocks) can be sent without massaging
+// the type. Used by both /chat and /recommend.
+function openAIRaw(body: Record<string, unknown>): Promise<string> {
+  const payload = JSON.stringify(body);
 
   return new Promise((resolve, reject) => {
     const options: https.RequestOptions = {
@@ -88,7 +168,7 @@ function openAIChat(
             error?: { message: string };
           };
           if (parsed.error) return reject(new AppError(502, parsed.error.message));
-          resolve(parsed.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.');
+          resolve(parsed.choices?.[0]?.message?.content ?? '');
         } catch {
           reject(new Error('Invalid JSON from OpenAI'));
         }

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/order.dart';
-import '../services/api_client.dart';
+import 'auth_provider.dart';
 
 final ordersProvider = AsyncNotifierProvider<OrdersNotifier, List<VendorOrder>>(
   () => OrdersNotifier(),

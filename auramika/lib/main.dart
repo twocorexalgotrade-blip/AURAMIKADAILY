@@ -1,10 +1,15 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpaymentgateway/cfpaymentgatewayservice.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -61,12 +66,43 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // ── Pre-warm payment-critical paths so checkout feels instant ─────────────
+  // 1. Touch the Cashfree native plugin so the SDK channel is ready by the
+  //    time the user reaches the pay screen (~500ms saved on first invoke).
+  // 2. Hit the backend /health endpoint so any cold connection / DNS / TLS
+  //    handshake is paid up-front, not at checkout.
+  // Both fire-and-forget; failures here must never block app launch.
+  unawaited(_prewarmPaymentStack());
+
   runApp(
     ProviderScope(
       observers: kDebugMode ? [_AppObserver()] : [],
       child: const AuramikaApp(),
     ),
   );
+}
+
+Future<void> _prewarmPaymentStack() async {
+  try {
+    // Touch the singleton so its platform channel registers early. We do NOT
+    // call setCallback here — that would clobber the real callbacks set in
+    // CheckoutScreen.initState and silently break the verify/error flow.
+    CFPaymentGatewayService();
+    if (kDebugMode) debugPrint('[Prewarm] Cashfree SDK singleton touched');
+  } catch (e) {
+    if (kDebugMode) debugPrint('[Prewarm] Cashfree SDK init skipped: $e');
+  }
+
+  try {
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 4),
+      receiveTimeout: const Duration(seconds: 4),
+    ));
+    final res = await dio.get('${AppConstants.baseUrl}/health');
+    if (kDebugMode) debugPrint('[Prewarm] backend /health → ${res.statusCode}');
+  } catch (e) {
+    if (kDebugMode) debugPrint('[Prewarm] backend /health skipped: $e');
+  }
 }
 
 /// Root application widget.

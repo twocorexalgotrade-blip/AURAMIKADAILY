@@ -6,6 +6,13 @@ import '../services/api_client.dart';
 
 final authProvider = AsyncNotifierProvider<AuthNotifier, Vendor?>(() => AuthNotifier());
 
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final storage = ref.watch(secureStorageProvider);
+  return ApiClient(storage, onUnauthorized: () {
+    ref.read(authProvider.notifier).logout();
+  });
+});
+
 class AuthNotifier extends AsyncNotifier<Vendor?> {
   @override
   Future<Vendor?> build() async {

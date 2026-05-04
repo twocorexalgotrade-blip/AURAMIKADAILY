@@ -19,6 +19,7 @@ import giftCardsRoutes from './routes/giftCards';
 import customOrdersRoutes from './routes/customOrders';
 import stylistRoutes from './routes/stylist';
 import legalRoutes from './routes/legal';
+import vendorPortalRoutes from './routes/vendorPortal';
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use(`${v1}/gift-cards`, giftCardsRoutes);
 app.use(`${v1}/custom-orders`, customOrdersRoutes);
 app.use(`${v1}/stylist`, stylistRoutes);
 app.use(`${v1}/legal`, legalRoutes);
+app.use(`${v1}/vendor`, vendorPortalRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);

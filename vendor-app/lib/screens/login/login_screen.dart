@@ -41,7 +41,7 @@ class LoginScreen extends HookConsumerWidget {
             padding: EdgeInsets.fromLTRB(28, topPad + 36, 28, 28),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFB8922A), Color(0xFFC9A84C), Color(0xFFE8C97A)],
+                colors: [Color(0xFF004D35), Color(0xFF00714D), Color(0xFFC9A84C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -50,21 +50,46 @@ class LoginScreen extends HookConsumerWidget {
               // Logo row
               Row(children: [
                 Container(
-                  width: 42, height: 42,
+                  width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(45),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF003D28), Color(0xFF005C3E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Color(0xFFE8C97A),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF003D28),
+                        blurRadius: 8,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                  child: const Icon(Icons.storefront_rounded, color: Color(0xFFE8C97A), size: 22),
                 ),
-                const SizedBox(width: 10),
-                const Text(
-                  'AURAMIKA',
-                  style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800,
-                    color: Colors.white, letterSpacing: 3.5,
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text(
+                    'AURAMIKA',
+                    style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w800,
+                      color: Colors.white, letterSpacing: 3.5,
+                      shadows: [Shadow(color: Color(0xFF002A1A), blurRadius: 6)],
+                    ),
                   ),
-                ),
+                  const Text(
+                    'VENDOR',
+                    style: TextStyle(
+                      fontSize: 9, fontWeight: FontWeight.w700,
+                      color: Color(0xFFE8C97A), letterSpacing: 4.5,
+                    ),
+                  ),
+                ]),
               ]),
               const Spacer(),
               const Text(
