@@ -96,6 +96,15 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
 
+            // ── Session error banner ──────────────────────────────────────
+            if (ordersAsync.hasError || productsAsync.hasError)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                sliver: SliverToBoxAdapter(
+                  child: _SessionErrorBanner(ref: ref),
+                ),
+              ),
+
             // ── Recent Orders ─────────────────────────────────────────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
@@ -144,10 +153,7 @@ class DashboardScreen extends ConsumerWidget {
                       child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2),
                     ),
                   ),
-                  error: (e, _) => Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text('Error: $e', style: const TextStyle(color: AppTheme.error, fontSize: 13)),
-                  ),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -275,6 +281,43 @@ class _OrderTile extends StatelessWidget {
       ]),
     );
   }
+}
+
+class _SessionErrorBanner extends StatelessWidget {
+  final WidgetRef ref;
+  const _SessionErrorBanner({required this.ref});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    decoration: BoxDecoration(
+      color: AppTheme.warning.withAlpha(18),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppTheme.warning.withAlpha(60)),
+    ),
+    child: Row(children: [
+      Icon(Icons.lock_outline_rounded, color: AppTheme.warning, size: 18),
+      const SizedBox(width: 10),
+      const Expanded(
+        child: Text(
+          'Session expired. Please sign in again.',
+          style: TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
+        ),
+      ),
+      const SizedBox(width: 8),
+      TextButton(
+        onPressed: () => ref.read(authProvider.notifier).logout(),
+        style: TextButton.styleFrom(
+          foregroundColor: AppTheme.warning,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+        child: const Text('Sign In'),
+      ),
+    ]),
+  );
 }
 
 class _StatusBadge extends StatelessWidget {

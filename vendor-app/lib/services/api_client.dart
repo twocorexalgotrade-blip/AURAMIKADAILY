@@ -14,9 +14,10 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 class ApiClient {
   final FlutterSecureStorage _storage;
+  final VoidCallback? onUnauthorized;
   late final Dio _dio;
 
-  ApiClient(this._storage) {
+  ApiClient(this._storage, {this.onUnauthorized}) {
     _dio = Dio(BaseOptions(
       baseUrl: AppConstants.baseUrl,
       connectTimeout: const Duration(seconds: 15),
@@ -32,7 +33,11 @@ class ApiClient {
         }
         handler.next(options);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          await _storage.delete(key: AppConstants.tokenKey);
+          onUnauthorized?.call();
+        }
         handler.next(error);
       },
     ));
