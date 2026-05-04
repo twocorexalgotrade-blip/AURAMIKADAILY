@@ -26,13 +26,6 @@ const List<String> kMaterials = [
   'Acrylic / Resin', 'Mixed Metal',
 ];
 
-// Luxury palette — matches dashboard
-const _black     = Color(0xFF0A0A0A);
-const _darkCard  = Color(0xFF141414);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
-
 class ProductFormScreen extends HookConsumerWidget {
   final String? productId;
   const ProductFormScreen({super.key, this.productId});
@@ -60,26 +53,23 @@ class ProductFormScreen extends HookConsumerWidget {
       product?.material != null && kMaterials.contains(product!.material)
           ? product.material : null,
     );
-    final inStock    = useState(product?.inStock ?? true);
-    final isExpress  = useState(product?.isExpress ?? false);
-    final imageUrls  = useState<List<String>>(product?.imageUrls ?? []);
-    final localFiles = useState<List<File>>([]);
-    final saving     = useState(false);
+    final inStock      = useState(product?.inStock ?? true);
+    final isExpress    = useState(product?.isExpress ?? false);
+    // Existing network URLs (from saved product or URL paste)
+    final imageUrls    = useState<List<String>>(product?.imageUrls ?? []);
+    // Locally picked files — shown with Image.file, uploaded on save
+    final localFiles   = useState<List<File>>([]);
+    final saving       = useState(false);
 
     Future<void> pickFromGallery() async {
-      try {
-        final picker = ImagePicker();
-        final picked = await picker.pickMultiImage(imageQuality: 80, maxWidth: 1200);
-        if (picked.isEmpty) return;
-        localFiles.value = [...localFiles.value, ...picked.map((x) => File(x.path))];
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Could not open gallery: $e'),
-            backgroundColor: AppTheme.error,
-          ));
-        }
-      }
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1200,
+      );
+      if (picked == null) return;
+      localFiles.value = [...localFiles.value, File(picked.path)];
     }
 
     void addImageUrl() {
@@ -99,12 +89,14 @@ class ProductFormScreen extends HookConsumerWidget {
       }
       saving.value = true;
 
+      // Try to upload any locally picked images
       final uploadedUrls = <String>[];
       var uploadFailed = false;
       for (final file in localFiles.value) {
         try {
           final url = await ref.read(productsProvider.notifier).uploadImage(
-            file, file.path.split('/').last,
+            file,
+            file.path.split('/').last,
           );
           uploadedUrls.add(url);
         } catch (_) {
@@ -156,32 +148,13 @@ class ProductFormScreen extends HookConsumerWidget {
       }
     }
 
+    // Total image count for display
     final totalImages = localFiles.value.length + imageUrls.value.length;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: _black,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          isEditing ? 'Edit Product' : 'New Product',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
-        ),
-        iconTheme: const IconThemeData(color: _goldLight),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.transparent, _gold, Colors.transparent],
-              ),
-            ),
-          ),
-        ),
+        title: Text(isEditing ? 'Edit Product' : 'New Product'),
         actions: [
           TextButton(
             onPressed: saving.value ? null : () => context.go('/products'),
@@ -190,11 +163,9 @@ class ProductFormScreen extends HookConsumerWidget {
           TextButton(
             onPressed: saving.value ? null : save,
             child: saving.value
-                ? const SizedBox(
-                    width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: _gold))
-                : const Text('Save',
-                    style: TextStyle(color: _gold, fontWeight: FontWeight.w800)),
+                ? const SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
+                : const Text('Save', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -202,7 +173,7 @@ class ProductFormScreen extends HookConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-          // ── Images ──────────────────────────────────────────────────────────
+          // ── Images ────────────────────────────────────────────────────────
           const _SectionLabel('Product Images'),
           const SizedBox(height: 10),
 
@@ -218,15 +189,17 @@ class ProductFormScreen extends HookConsumerWidget {
                     width: 100, height: 100,
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: _darkCard,
+                      color: AppTheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _gold.withAlpha(110), width: 1.5),
+                      border: Border.all(
+                        color: AppTheme.secondary.withAlpha(150),
+                        width: 1.5,
+                      ),
                     ),
                     child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.add_photo_alternate_outlined, color: _gold, size: 28),
+                      Icon(Icons.add_photo_alternate_outlined, color: AppTheme.primary, size: 28),
                       SizedBox(height: 5),
-                      Text('Gallery',
-                          style: TextStyle(fontSize: 11, color: _goldLight, fontWeight: FontWeight.w600)),
+                      Text('Gallery', style: TextStyle(fontSize: 11, color: AppTheme.primary, fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ),
@@ -284,15 +257,15 @@ class ProductFormScreen extends HookConsumerWidget {
             TextButton(
               onPressed: addImageUrl,
               style: TextButton.styleFrom(
-                foregroundColor: _olive,
+                foregroundColor: AppTheme.secondary,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-              child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ]),
           const SizedBox(height: 20),
 
-          // ── Basic Info ───────────────────────────────────────────────────────
+          // ── Basic Info ─────────────────────────────────────────────────────
           const _SectionLabel('Basic Info'),
           const SizedBox(height: 10),
           _Field(controller: nameCtrl, label: 'Product Name *', hint: 'e.g. Gold Hoop Earrings'),
@@ -302,7 +275,7 @@ class ProductFormScreen extends HookConsumerWidget {
           _Field(controller: descCtrl, label: 'Description', hint: 'Describe the product…', maxLines: 3),
           const SizedBox(height: 20),
 
-          // ── Pricing ─────────────────────────────────────────────────────────
+          // ── Pricing ────────────────────────────────────────────────────────
           const _SectionLabel('Pricing'),
           const SizedBox(height: 10),
           Row(children: [
@@ -320,7 +293,7 @@ class ProductFormScreen extends HookConsumerWidget {
           ]),
           const SizedBox(height: 20),
 
-          // ── Details ─────────────────────────────────────────────────────────
+          // ── Details ────────────────────────────────────────────────────────
           const _SectionLabel('Details'),
           const SizedBox(height: 10),
           Row(children: [
@@ -347,7 +320,7 @@ class ProductFormScreen extends HookConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Options ─────────────────────────────────────────────────────────
+          // ── Options ────────────────────────────────────────────────────────
           const _SectionLabel('Options'),
           const SizedBox(height: 10),
           _Toggle(label: 'In Stock', value: inStock.value, onChanged: (v) => inStock.value = v),
@@ -359,8 +332,7 @@ class ProductFormScreen extends HookConsumerWidget {
             child: ElevatedButton(
               onPressed: saving.value ? null : save,
               child: saving.value
-                  ? const SizedBox(
-                      height: 18, width: 18,
+                  ? const SizedBox(height: 18, width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(isEditing ? 'Update Product' : 'Create Product'),
             ),
@@ -406,18 +378,11 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-    Container(
-      width: 3, height: 14,
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
-    ),
-    Text(
-      text,
-      style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w700, color: _gold, letterSpacing: 0.5),
-    ),
-  ]);
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+        color: AppTheme.secondary, letterSpacing: 0.5),
+  );
 }
 
 class _Field extends StatelessWidget {
@@ -482,16 +447,12 @@ class _Toggle extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppTheme.surface,
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: _gold.withAlpha(65)),
-      boxShadow: [
-        BoxShadow(color: _gold.withAlpha(12), blurRadius: 8, offset: const Offset(0, 2)),
-      ],
+      border: Border.all(color: AppTheme.border),
     ),
     child: Row(children: [
-      Expanded(child: Text(label,
-          style: const TextStyle(fontSize: 14, color: _black, fontWeight: FontWeight.w500))),
+      Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
       Switch(value: value, onChanged: onChanged),
     ]),
   );
