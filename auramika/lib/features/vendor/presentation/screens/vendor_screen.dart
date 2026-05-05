@@ -11,6 +11,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/product_card.dart';
 import '../../../shop/domain/shop_models.dart';
+import '../../../shop/domain/shop_provider.dart';
 
 enum _SortOrder { featured, priceLow, priceHigh, nameAZ }
 
@@ -249,10 +250,32 @@ class _VendorScreenState extends ConsumerState<VendorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final vendorAsync = ref.watch(
-      vendorInfoProvider(widget.vendorId?.isNotEmpty == true ? widget.vendorId! : 'v1'),
-    );
-    final vendor = vendorAsync.valueOrNull ?? _mockVendor;
+    final effectiveId = widget.vendorId?.isNotEmpty == true ? widget.vendorId! : 'v1';
+    final vendorAsync = ref.watch(vendorInfoProvider(effectiveId));
+    final shopsAsync = ref.watch(shopsProvider);
+
+    // Build instant fallback from the already-cached shop grid data so the
+    // correct shop name shows immediately instead of flashing "Auramika Studio"
+    ShopModel? shopModel;
+    final shopList = shopsAsync.valueOrNull ?? [];
+    for (final s in shopList) {
+      if (s.id == effectiveId) { shopModel = s; break; }
+    }
+    final fallback = shopModel != null
+        ? VendorInfo(
+            id: shopModel.id,
+            name: shopModel.name,
+            tagline: shopModel.description,
+            location: shopModel.location,
+            totalProducts: shopModel.totalProducts,
+            rating: shopModel.rating,
+            reviewCount: 0,
+            brandColor: shopModel.brandColor,
+            products: const [],
+          )
+        : _mockVendor;
+
+    final vendor = vendorAsync.valueOrNull ?? fallback;
     final filtered = _filteredProducts(vendor);
     final currentTab = _tabs[_tabController.index];
 
@@ -317,7 +340,34 @@ class _VendorScreenState extends ConsumerState<VendorScreen>
             ),
 
           // ── Product grid or empty state ─────────────────────────────────
-          if (filtered.isEmpty)
+          if (vendorAsync.isLoading)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 26,
+                      height: 26,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Loading products...',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (filtered.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: _EmptyMaterialState(material: currentTab),
