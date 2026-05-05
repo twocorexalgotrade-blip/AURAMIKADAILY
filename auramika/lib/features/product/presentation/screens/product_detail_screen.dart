@@ -36,6 +36,7 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   late ProductDetail _product;
   String? _selectedSize;
+  bool _loadingProduct = false;
 
   @override
   void initState() {
@@ -43,6 +44,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     _product = widget.product ?? ProductCatalogue.getProductById(widget.productId ?? 'e1');
     if (_product.sizes.isNotEmpty) _selectedSize = _product.sizes[0];
     if (widget.product == null && widget.productId != null) {
+      _loadingProduct = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadFromApi(widget.productId!));
     }
   }
@@ -56,6 +58,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       final rawImages = p['image_urls'];
       final imageUrls = rawImages is List ? rawImages.cast<String>().toList() : <String>[];
       setState(() {
+        _loadingProduct = false;
         _product = ProductDetail(
           id: p['id'] as String,
           brandName: (p['brand_name'] as String?)?.isNotEmpty == true
@@ -81,7 +84,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         );
       });
     } catch (_) {
-      // keep mock fallback already set in initState
+      if (mounted) setState(() => _loadingProduct = false);
     }
   }
 
@@ -218,6 +221,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             child: _StickyCartBar(
               product: _product,
               onAddToCart: _onAddToCart,
+              loading: _loadingProduct,
             ),
           ),
         ],
@@ -757,10 +761,12 @@ class _WearItWithSection extends StatelessWidget {
 class _StickyCartBar extends StatelessWidget {
   final ProductDetail product;
   final VoidCallback onAddToCart;
+  final bool loading;
 
   const _StickyCartBar({
     required this.product,
     required this.onAddToCart,
+    this.loading = false,
   });
 
   @override
@@ -827,37 +833,51 @@ class _StickyCartBar extends StatelessWidget {
 
           // Add to Cart button
           GestureDetector(
-            onTap: product.isInStock ? onAddToCart : null,
+            onTap: (product.isInStock && !loading) ? onAddToCart : null,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppConstants.paddingL,
                 vertical: AppConstants.paddingM,
               ),
               decoration: BoxDecoration(
-                color: product.isInStock
+                color: (product.isInStock && !loading)
                     ? AppColors.forestGreen
                     : AppColors.textMuted,
                 borderRadius: BorderRadius.circular(AppConstants.radiusS),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 16,
-                    color: AppColors.white,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    product.isInStock ? 'ADD TO CART' : 'OUT OF STOCK',
-                    style: AppTextStyles.categoryChip.copyWith(
-                      color: AppColors.white,
-                      fontSize: 11,
-                      letterSpacing: 1.5,
+              child: loading
+                  ? const SizedBox(
+                      width: 80,
+                      child: Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: AppColors.white,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 16,
+                          color: AppColors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          product.isInStock ? 'ADD TO CART' : 'OUT OF STOCK',
+                          style: AppTextStyles.categoryChip.copyWith(
+                            color: AppColors.white,
+                            fontSize: 11,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
