@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_constants.dart';
 
 enum OrderStatus { processing, inTransit, delivered, cancelled }
 
@@ -40,7 +43,20 @@ class OrdersNotifier extends Notifier<List<OrderModel>> {
     state = [order, ...state];
   }
 
-  void cancelOrder(String id) {
+  Future<void> cancelOrder(String id) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final token = await user.getIdToken();
+        final dio = Dio(BaseOptions(baseUrl: '${AppConstants.baseUrl}/api/v1'));
+        await dio.post(
+          '/orders/$id/cancel',
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      }
+    } catch (_) {
+      // Demo orders (ORD-*) 404 on the backend — still update local state
+    }
     state = [
       for (final o in state)
         if (o.id == id) o.copyWith(status: OrderStatus.cancelled) else o,

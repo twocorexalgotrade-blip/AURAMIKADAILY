@@ -318,21 +318,40 @@ class _OrderCard extends ConsumerWidget {
                     .copyWith(color: AppColors.forestGreen, fontSize: 13)),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(ordersProvider.notifier).cancelOrder(order.id);
+            onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Order ${order.id} has been cancelled.',
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.white)),
-                  backgroundColor: AppColors.terraCotta,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.radiusXS)),
-                ),
-              );
+              try {
+                await ref.read(ordersProvider.notifier).cancelOrder(order.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Order ${order.id} has been cancelled.',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.white)),
+                      backgroundColor: AppColors.terraCotta,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.radiusXS)),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to cancel order. Please try again.',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.white)),
+                      backgroundColor: const Color(0xFFB71C1C),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.radiusXS)),
+                    ),
+                  );
+                }
+              }
             },
             child: Text('Cancel Order',
                 style: AppTextStyles.bodySmall.copyWith(

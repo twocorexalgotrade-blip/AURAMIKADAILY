@@ -160,7 +160,7 @@ router.post('/:id/cancel', requireAuth, async (req: AuthenticatedRequest, res: R
   if (orderRes.rows.length === 0) throw new AppError(404, 'Order not found');
   const order = orderRes.rows[0];
   if (order.user_uid !== req.uid) throw new AppError(403, 'Forbidden');
-  if (!['pending', 'payment_pending', 'confirmed'].includes(order.status as string)) {
+  if (!['pending', 'payment_pending', 'confirmed', 'processing'].includes(order.status as string)) {
     throw new AppError(400, 'Order cannot be cancelled at this stage');
   }
   await pool.query("UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1", [req.params['id']]);
