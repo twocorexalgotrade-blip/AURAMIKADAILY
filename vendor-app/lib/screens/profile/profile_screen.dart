@@ -14,7 +14,7 @@ const _black     = Color(0xFF0A0A0A);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
-const _sapphire  = Color(0xFF2D6B4A);
+const _oliveDeep = Color(0xFF4A5E20);
 
 class ProfileScreen extends HookConsumerWidget {
   const ProfileScreen({super.key});
@@ -53,12 +53,30 @@ class ProfileScreen extends HookConsumerWidget {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF080808), Color(0xFF111A0E)],
+                    colors: [Color(0xFF060806), Color(0xFF0C1006), Color(0xFF121808)],
+                    stops: [0.0, 0.55, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
                 child: Stack(children: [
+                  // Diagonal shine sweep
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withAlpha(0),
+                            Colors.white.withAlpha(9),
+                            Colors.white.withAlpha(0),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  ),
                   // Gold radial shimmer — top right
                   Positioned(
                     top: -40, right: -20,
@@ -67,20 +85,20 @@ class ProfileScreen extends HookConsumerWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
-                          colors: [_gold.withAlpha(35), Colors.transparent],
+                          colors: [_gold.withAlpha(52), Colors.transparent],
                         ),
                       ),
                     ),
                   ),
-                  // Sapphire radial shimmer — bottom left
+                  // Deep olive shimmer — bottom left
                   Positioned(
                     bottom: -20, left: -10,
                     child: Container(
-                      width: 140, height: 140,
+                      width: 160, height: 160,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
-                          colors: [_sapphire.withAlpha(45), Colors.transparent],
+                          colors: [_oliveDeep.withAlpha(75), Colors.transparent],
                         ),
                       ),
                     ),
@@ -222,7 +240,7 @@ class ProfileScreen extends HookConsumerWidget {
                 const _Divider(),
                 _ActionTile(
                   icon: Icons.receipt_long_outlined,
-                  iconColor: _sapphire,
+                  iconColor: _oliveDeep,
                   label: 'My Orders',
                   subtitle: '$activeOrders active · $orderCount total',
                   onTap: () => context.go('/orders'),

@@ -9,13 +9,13 @@ import '../../providers/orders_provider.dart';
 import '../../providers/products_provider.dart';
 import '../../widgets/stat_card.dart';
 
-// Luxury palette: olive green · sapphire green · golden · black · white
+// Luxury palette: olive green · golden · black · white
 const _black     = Color(0xFF0A0A0A);
 const _darkCard  = Color(0xFF141414);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
-const _sapphire  = Color(0xFF2D6B4A);
+const _oliveDeep = Color(0xFF4A5E20);
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -42,10 +42,7 @@ class DashboardScreen extends ConsumerWidget {
           slivers: [
             // ── Luxury Header ─────────────────────────────────────────────────
             SliverToBoxAdapter(
-              child: _LuxuryHeader(
-                vendorName: vendor?.name ?? '',
-                onLogout: () => ref.read(authProvider.notifier).logout(),
-              ),
+              child: _LuxuryHeader(vendorName: vendor?.name ?? ''),
             ),
 
             // ── Stats ─────────────────────────────────────────────────────────
@@ -56,22 +53,23 @@ class DashboardScreen extends ConsumerWidget {
                   data: (products) => ordersAsync.when(
                     data: (orders) => _StatsGrid(products: products.length, orders: orders),
                     loading: () => const _StatsGridSkeleton(),
-                    error: (_, __) => const _StatsGridSkeleton(),
+                    error: (_, __) => _StatsGrid(products: products.length, orders: const []),
                   ),
                   loading: () => const _StatsGridSkeleton(),
-                  error: (_, __) => const _StatsGridSkeleton(),
+                  error: (_, __) => ordersAsync.when(
+                    data: (orders) => _StatsGrid(products: 0, orders: orders),
+                    loading: () => const _StatsGridSkeleton(),
+                    error: (_, __) => _DataErrorCard(
+                      message: 'Could not load stats',
+                      onRetry: () {
+                        ref.read(productsProvider.notifier).refresh();
+                        ref.read(ordersProvider.notifier).refresh();
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
-
-            // ── Session error banner ──────────────────────────────────────────
-            if (ordersAsync.hasError || productsAsync.hasError)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                sliver: SliverToBoxAdapter(
-                  child: _SessionErrorBanner(ref: ref),
-                ),
-              ),
 
             // ── Recent Orders header ───────────────────────────────────────────
             SliverPadding(
@@ -178,8 +176,7 @@ class DashboardScreen extends ConsumerWidget {
 
 class _LuxuryHeader extends StatelessWidget {
   final String vendorName;
-  final VoidCallback onLogout;
-  const _LuxuryHeader({required this.vendorName, required this.onLogout});
+  const _LuxuryHeader({required this.vendorName});
 
   @override
   Widget build(BuildContext context) {
@@ -192,12 +189,30 @@ class _LuxuryHeader extends StatelessWidget {
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF080808), Color(0xFF111A0E)],
+            colors: [Color(0xFF060806), Color(0xFF0C1006), Color(0xFF121808)],
+            stops: [0.0, 0.55, 1.0],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: Stack(children: [
+          // Diagonal shine sweep
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withAlpha(0),
+                    Colors.white.withAlpha(9),
+                    Colors.white.withAlpha(0),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
           // Gold radial shimmer — top right
           Positioned(
             top: -40,
@@ -208,22 +223,22 @@ class _LuxuryHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [_gold.withAlpha(38), Colors.transparent],
+                  colors: [_gold.withAlpha(52), Colors.transparent],
                 ),
               ),
             ),
           ),
-          // Sapphire radial shimmer — bottom left
+          // Deep olive radial shimmer — bottom left
           Positioned(
             bottom: -20,
             left: -10,
             child: Container(
-              width: 140,
-              height: 140,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [_sapphire.withAlpha(50), Colors.transparent],
+                  colors: [_oliveDeep.withAlpha(75), Colors.transparent],
                 ),
               ),
             ),
@@ -248,65 +263,48 @@ class _LuxuryHeader extends StatelessWidget {
               top: MediaQuery.of(context).padding.top + 24,
               bottom: 32,
               left: 22,
-              right: 16,
+              right: 22,
             ),
-            child: Row(children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  // Brand eyebrow
-                  Row(children: [
-                    Container(
-                      width: 3,
-                      height: 15,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: _gold,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const Text(
-                      'AURAMIKA',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: _gold,
-                        letterSpacing: 3.5,
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Hello, $vendorName',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Vendor Dashboard',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _goldLight,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ]),
-              ),
-              // Logout button
-              GestureDetector(
-                onTap: onLogout,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Brand eyebrow
+              Row(children: [
+                Container(
+                  width: 3,
+                  height: 15,
+                  margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: _gold.withAlpha(20),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _gold.withAlpha(90), width: 1),
+                    color: _gold,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  child: const Icon(Icons.logout_outlined, color: _goldLight, size: 20),
+                ),
+                const Text(
+                  'AURAMIKA',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: _gold,
+                    letterSpacing: 3.5,
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 14),
+              Text(
+                'Hello, $vendorName',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Vendor Dashboard',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _goldLight,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.4,
                 ),
               ),
             ]),
@@ -315,6 +313,49 @@ class _LuxuryHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Data error card ────────────────────────────────────────────────────────────
+
+class _DataErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _DataErrorCard({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _gold.withAlpha(60)),
+          boxShadow: [
+            BoxShadow(color: _gold.withAlpha(16), blurRadius: 12, offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(children: [
+          Icon(Icons.wifi_off_rounded, color: _olive, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 13, color: _black, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              foregroundColor: _olive,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+            child: const Text('Retry'),
+          ),
+        ]),
+      );
 }
 
 // ── Luxury CTA button ──────────────────────────────────────────────────────────
@@ -413,7 +454,7 @@ class _StatsGrid extends StatelessWidget {
             label: 'Total Orders',
             value: orders.length.toString(),
             icon: Icons.receipt_long_outlined,
-            color: _sapphire,
+            color: _oliveDeep,
             dark: true),
         StatCard(
             label: 'Revenue',
@@ -478,11 +519,11 @@ class _OrderTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: _sapphire.withAlpha(18),
+            color: _oliveDeep.withAlpha(18),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _sapphire.withAlpha(45)),
+            border: Border.all(color: _oliveDeep.withAlpha(45)),
           ),
-          child: const Icon(Icons.receipt_outlined, size: 18, color: _sapphire),
+          child: const Icon(Icons.receipt_outlined, size: 18, color: _oliveDeep),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -519,7 +560,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (textColor, bg, borderColor) = switch (status) {
-      'paid' => (_sapphire, _sapphire.withAlpha(22), _sapphire.withAlpha(75)),
+      'paid' => (_oliveDeep, _oliveDeep.withAlpha(22), _oliveDeep.withAlpha(75)),
       'processing' => (_olive, _olive.withAlpha(22), _olive.withAlpha(75)),
       'shipped' => (_gold, _gold.withAlpha(28), _gold.withAlpha(75)),
       'delivered' => (Colors.white, _black, _black),
@@ -544,43 +585,4 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Session error banner ───────────────────────────────────────────────────────
-
-class _SessionErrorBanner extends StatelessWidget {
-  final WidgetRef ref;
-  const _SessionErrorBanner({required this.ref});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppTheme.warning.withAlpha(18),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.warning.withAlpha(60)),
-        ),
-        child: Row(children: [
-          Icon(Icons.lock_outline_rounded, color: AppTheme.warning, size: 18),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Session expired. Please sign in again.',
-              style: TextStyle(fontSize: 13, color: _black, fontWeight: FontWeight.w500),
-            ),
-          ),
-          const SizedBox(width: 8),
-          TextButton(
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.warning,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-            ),
-            child: const Text('Sign In'),
-          ),
-        ]),
-      );
 }

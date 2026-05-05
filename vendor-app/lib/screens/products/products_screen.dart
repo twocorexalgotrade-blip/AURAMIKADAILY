@@ -11,7 +11,7 @@ const _black     = Color(0xFF0A0A0A);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
-const _sapphire  = Color(0xFF2D6B4A);
+const _oliveDeep = Color(0xFF4A5E20);
 
 class ProductsScreen extends ConsumerWidget {
   const ProductsScreen({super.key});
@@ -185,13 +185,13 @@ class _ProductTile extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _sapphire.withAlpha(18),
+                      color: _oliveDeep.withAlpha(18),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: _sapphire.withAlpha(50), width: 0.8),
+                      border: Border.all(color: _oliveDeep.withAlpha(50), width: 0.8),
                     ),
                     child: const Text('⚡ Express',
                         style: TextStyle(
-                            fontSize: 10, color: _sapphire, fontWeight: FontWeight.w700)),
+                            fontSize: 10, color: _oliveDeep, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ]),
@@ -316,7 +316,7 @@ class _ImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: _sapphire.withAlpha(15),
-        child: const Icon(Icons.image_outlined, color: _sapphire, size: 24),
+        color: _oliveDeep.withAlpha(15),
+        child: const Icon(Icons.image_outlined, color: _oliveDeep, size: 24),
       );
 }

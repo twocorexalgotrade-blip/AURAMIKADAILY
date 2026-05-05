@@ -14,7 +14,7 @@ const _darkCard  = Color(0xFF141414);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
-const _sapphire  = Color(0xFF2D6B4A);
+const _oliveDeep = Color(0xFF4A5E20);
 
 List<VendorOrder> _applyFilter(List<VendorOrder> orders, String filter) {
   return switch (filter) {
@@ -264,13 +264,13 @@ class _OrderCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _sapphire.withAlpha(18),
+                  color: _oliveDeep.withAlpha(18),
                   borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: _sapphire.withAlpha(50), width: 0.8),
+                  border: Border.all(color: _oliveDeep.withAlpha(50), width: 0.8),
                 ),
                 child: const Text('⚡ Express',
                     style: TextStyle(
-                        fontSize: 10, color: _sapphire, fontWeight: FontWeight.w700)),
+                        fontSize: 10, color: _oliveDeep, fontWeight: FontWeight.w700)),
               ),
             ],
             const Spacer(),
@@ -287,10 +287,10 @@ class _OrderCard extends ConsumerWidget {
   Widget _imgPlaceholder() => Container(
     width: 44, height: 44,
     decoration: BoxDecoration(
-      color: _sapphire.withAlpha(15),
+      color: _oliveDeep.withAlpha(15),
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Icon(Icons.image_outlined, size: 20, color: _sapphire),
+    child: const Icon(Icons.image_outlined, size: 20, color: _oliveDeep),
   );
 }
 
@@ -389,7 +389,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (textColor, bg, borderColor) = switch (status) {
-      'paid'                    => (_sapphire,             _sapphire.withAlpha(22),        _sapphire.withAlpha(75)),
+      'paid'                    => (_oliveDeep,             _oliveDeep.withAlpha(22),        _oliveDeep.withAlpha(75)),
       'processing'              => (_olive,                 _olive.withAlpha(22),            _olive.withAlpha(75)),
       'shipped'                 => (_gold,                  _gold.withAlpha(28),             _gold.withAlpha(75)),
       'delivered'               => (Colors.white,           _black,                          _black),
