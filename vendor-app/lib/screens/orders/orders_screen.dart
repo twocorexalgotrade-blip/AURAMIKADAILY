@@ -18,7 +18,7 @@ const _sapphire  = Color(0xFF2D6B4A);
 
 List<VendorOrder> _applyFilter(List<VendorOrder> orders, String filter) {
   return switch (filter) {
-    'Pending'    => orders.where((o) => ['paid', 'processing'].contains(o.status)).toList(),
+    'Pending'    => orders.where((o) => ['payment_pending', 'paid', 'processing'].contains(o.status)).toList(),
     'In Process' => orders.where((o) => o.status == 'shipped').toList(),
     'Completed'  => orders.where((o) => o.status == 'delivered').toList(),
     'Cancelled'  => orders.where((o) => ['cancelled', 'refunded'].contains(o.status)).toList(),

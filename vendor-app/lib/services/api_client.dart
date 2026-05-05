@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,26 @@ class ApiClient {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onResponse: (response, handler) {
+        // Dio silently stores raw strings when the server returns non-JSON
+        // (e.g. an HTML page from a misconfigured reverse proxy). Detect this
+        // early and surface a clear error instead of a confusing type-cast crash.
+        if (response.data is String) {
+          final raw = response.data as String;
+          try {
+            response.data = jsonDecode(raw);
+          } catch (_) {
+            return handler.reject(DioException(
+              requestOptions: response.requestOptions,
+              response: response,
+              type: DioExceptionType.badResponse,
+              error: 'Backend returned an unexpected response (not JSON). '
+                  'The server may still be deploying — please try again in a moment.',
+            ));
+          }
+        }
+        handler.next(response);
       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {

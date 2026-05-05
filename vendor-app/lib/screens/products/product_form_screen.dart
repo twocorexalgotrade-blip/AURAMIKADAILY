@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -8,6 +9,15 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/theme.dart';
 import '../../models/product.dart';
 import '../../providers/products_provider.dart';
+
+String _dioError(Object e) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map) return (data['error'] ?? data['message'] ?? 'Server error').toString();
+    return e.message ?? 'Network error';
+  }
+  return e.toString().replaceFirst('Exception: ', '');
+}
 
 const List<String> kCategories = [
   'Earrings', 'Necklaces', 'Bracelets', 'Rings', 'Bangles',
@@ -150,7 +160,7 @@ class ProductFormScreen extends HookConsumerWidget {
         saving.value = false;
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Save failed: $e'), backgroundColor: AppTheme.error),
+            SnackBar(content: Text(_dioError(e)), backgroundColor: AppTheme.error),
           );
         }
       }

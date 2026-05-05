@@ -18,7 +18,7 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-        id: json['id'] as int,
+        id: (json['id'] as num).toInt(),
         productId: json['product_id'] as String,
         productName: json['product_name'] as String,
         brandName: json['brand_name'] as String? ?? '',

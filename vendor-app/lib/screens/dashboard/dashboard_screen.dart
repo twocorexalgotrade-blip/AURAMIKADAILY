@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
@@ -382,6 +383,12 @@ class _StatsGrid extends StatelessWidget {
         .where((o) => ['paid', 'processing', 'shipped', 'delivered'].contains(o.status))
         .fold(0.0, (s, o) => s + o.total);
 
+    final revenueLabel = totalRevenue >= 10000000
+        ? '₹${NumberFormat('##,##,##,###', 'en_IN').format(totalRevenue.toInt())}'
+        : totalRevenue >= 1000
+            ? '₹${NumberFormat('##,##,###', 'en_IN').format(totalRevenue.toInt())}'
+            : '₹${totalRevenue.toStringAsFixed(0)}';
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -410,7 +417,7 @@ class _StatsGrid extends StatelessWidget {
             dark: true),
         StatCard(
             label: 'Revenue',
-            value: '₹${totalRevenue.toStringAsFixed(0)}',
+            value: revenueLabel,
             icon: Icons.trending_up_rounded,
             color: _goldLight,
             dark: true),
@@ -452,7 +459,9 @@ class _OrderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => context.go('/orders'),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
@@ -496,6 +505,7 @@ class _OrderTile extends StatelessWidget {
         ])),
         _StatusBadge(status: order.status),
       ]),
+    ),
     );
   }
 }
