@@ -9,8 +9,8 @@ import '../../providers/orders_provider.dart';
 const _filters = ['All', 'Pending', 'In Process', 'Completed', 'Cancelled'];
 
 // Luxury palette — matches dashboard
-const _black     = Color(0xFF0A0A0A);
-const _darkCard  = Color(0xFF141414);
+const _black     = Color(0xFF1A2E1C);
+const _darkCard  = Color(0xFF152A19);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
@@ -45,6 +45,10 @@ class OrdersScreen extends HookConsumerWidget {
           'Orders',
           style: TextStyle(
             color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: 0.2),
+        ),
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Icon(Icons.diamond_outlined, color: _goldLight, size: 22),
         ),
         iconTheme: const IconThemeData(color: _goldLight),
         actionsIconTheme: const IconThemeData(color: _goldLight),
@@ -369,7 +373,35 @@ class _UpdateButton extends ConsumerWidget {
               onChanged: (val) async {
                 Navigator.pop(context);
                 if (val != null && val != order.status) {
-                  await ref.read(ordersProvider.notifier).updateStatus(order.id, val);
+                  try {
+                    await ref.read(ordersProvider.notifier).updateStatus(order.id, val);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Order marked as ${val[0].toUpperCase()}${val.substring(1)}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: _oliveDeep,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Failed to update order status. Please try again.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
                 }
               },
             ),

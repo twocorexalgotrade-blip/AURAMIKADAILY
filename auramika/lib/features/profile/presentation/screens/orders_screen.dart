@@ -105,13 +105,21 @@ class _OrderCard extends ConsumerWidget {
                   borderRadius:
                       BorderRadius.circular(AppConstants.radiusXS),
                   child: order.imageAsset != null
-                      ? Image.asset(
-                          order.imageAsset!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _placeholder(),
-                        )
+                      ? (order.imageAsset!.startsWith('http')
+                          ? Image.network(
+                              order.imageAsset!,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _placeholder(),
+                            )
+                          : Image.asset(
+                              order.imageAsset!,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _placeholder(),
+                            ))
                       : _placeholder(),
                 ),
                 const SizedBox(width: AppConstants.paddingM),

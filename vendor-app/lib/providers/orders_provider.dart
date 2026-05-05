@@ -23,11 +23,12 @@ class OrdersNotifier extends AsyncNotifier<List<VendorOrder>> {
   }
 
   Future<void> updateStatus(String orderId, String newStatus) async {
-    final api = ref.read(apiClientProvider);
-    await api.put('/vendor/orders/$orderId/status', data: {'status': newStatus});
+    final previous = state;
+    // Optimistic update — UI responds immediately
     state = AsyncData(
       (state.value ?? []).map((o) {
-        return o.id == orderId ? VendorOrder.fromJson({
+        if (o.id != orderId) return o;
+        return VendorOrder.fromJson({
           'id': o.id,
           'status': newStatus,
           'subtotal': o.subtotal,
@@ -45,8 +46,16 @@ class OrdersNotifier extends AsyncNotifier<List<VendorOrder>> {
           }).toList(),
           'created_at': o.createdAt.toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
-        }) : o;
+        });
       }).toList(),
     );
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/vendor/orders/$orderId/status', data: {'status': newStatus});
+    } catch (e) {
+      // Revert to previous state and rethrow so the UI can show an error
+      state = previous;
+      rethrow;
+    }
   }
 }
