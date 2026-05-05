@@ -118,7 +118,7 @@ router.post('/login', async (req: Request, res: Response) => {
 // ── GET /vendor/me ─────────────────────────────────────────────────────────
 router.get('/me', requireVendorAuth, async (req: VendorRequest, res: Response) => {
   const result = await pool.query(
-    `SELECT v.id, v.name, v.description, v.logo_url, v.is_verified, v.rating,
+    `SELECT v.id, v.name, v.description, v.logo_url, v.banner_url, v.is_verified, v.rating,
             vc.username, vc.last_login
      FROM vendors v
      JOIN vendor_credentials vc ON vc.vendor_id = v.id
@@ -127,6 +127,19 @@ router.get('/me', requireVendorAuth, async (req: VendorRequest, res: Response) =
   );
   if (result.rows.length === 0) throw new AppError(404, 'Vendor not found');
   res.json(result.rows[0]);
+});
+
+// ── PUT /vendor/me/banner ──────────────────────────────────────────────────
+router.put('/me/banner', requireVendorAuth, async (req: VendorRequest, res: Response) => {
+  const { banner_url } = req.body as { banner_url?: string };
+  if (!banner_url || typeof banner_url !== 'string') {
+    throw new AppError(400, 'banner_url is required');
+  }
+  await pool.query(
+    'UPDATE vendors SET banner_url = $1 WHERE id = $2',
+    [banner_url, req.vendorId],
+  );
+  res.json({ banner_url });
 });
 
 // ── GET /vendor/products ───────────────────────────────────────────────────

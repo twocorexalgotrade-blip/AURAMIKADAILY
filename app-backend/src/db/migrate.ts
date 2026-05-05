@@ -144,6 +144,7 @@ export async function runMigrations() {
   // Idempotent column additions for tables that may predate schema changes
   await pool.query(`
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS brand_name TEXT NOT NULL DEFAULT '';
+    ALTER TABLE vendors ADD COLUMN IF NOT EXISTS banner_url TEXT;
   `);
 
   // Hot-path indexes — idempotent (IF NOT EXISTS)
