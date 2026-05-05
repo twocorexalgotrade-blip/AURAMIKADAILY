@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../cart/domain/cart_model.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../profile/domain/wishlist_controller.dart';
@@ -41,6 +42,47 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     super.initState();
     _product = widget.product ?? ProductCatalogue.getProductById(widget.productId ?? 'e1');
     if (_product.sizes.isNotEmpty) _selectedSize = _product.sizes[0];
+    if (widget.product == null && widget.productId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadFromApi(widget.productId!));
+    }
+  }
+
+  Future<void> _loadFromApi(String productId) async {
+    try {
+      final dio = ref.read(apiServiceProvider);
+      final res = await dio.get<Map<String, dynamic>>('/products/$productId');
+      if (!mounted) return;
+      final p = res.data!;
+      final rawImages = p['image_urls'];
+      final imageUrls = rawImages is List ? rawImages.cast<String>().toList() : <String>[];
+      setState(() {
+        _product = ProductDetail(
+          id: p['id'] as String,
+          brandName: (p['brand_name'] as String?)?.isNotEmpty == true
+              ? p['brand_name'] as String
+              : 'AURAMIKA',
+          productName: (p['product_name'] as String?) ?? '',
+          description: (p['description'] as String?)?.isNotEmpty == true
+              ? p['description'] as String
+              : 'Hand-crafted with precision, this piece embodies the AURAMIKA philosophy of '
+                  'timeless elegance meeting modern design.',
+          price: (p['price'] as num).toDouble(),
+          originalPrice: p['original_price'] != null
+              ? (p['original_price'] as num).toDouble()
+              : null,
+          material: (p['material'] as String?) ?? 'Gold',
+          category: (p['category'] as String?) ?? 'Jewelry',
+          vibe: (p['vibe'] as String?) ?? 'All',
+          isExpressAvailable: (p['is_express'] as bool?) ?? false,
+          isInStock: (p['in_stock'] as bool?) ?? true,
+          imageUrls: imageUrls,
+          sizes: [],
+          wearItWith: [],
+        );
+      });
+    } catch (_) {
+      // keep mock fallback already set in initState
+    }
   }
 
   void _onAddToCart() {
@@ -894,15 +936,25 @@ class _ShareBottomSheet extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: product.imageUrls.isNotEmpty
-                    ? Image.asset(
-                        product.imageUrls.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.diamond_outlined,
-                          color: product.materialColor,
-                          size: 24,
-                        ),
-                      )
+                    ? (product.imageUrls.first.startsWith('http')
+                        ? Image.network(
+                            product.imageUrls.first,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.diamond_outlined,
+                              color: product.materialColor,
+                              size: 24,
+                            ),
+                          )
+                        : Image.asset(
+                            product.imageUrls.first,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.diamond_outlined,
+                              color: product.materialColor,
+                              size: 24,
+                            ),
+                          ))
                     : Icon(
                         Icons.diamond_outlined,
                         color: product.materialColor,

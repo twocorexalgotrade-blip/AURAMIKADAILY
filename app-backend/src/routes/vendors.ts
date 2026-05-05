@@ -10,7 +10,6 @@ router.get('/', async (_req: Request, res: Response) => {
     `SELECT v.*,
             (SELECT COUNT(*) FROM products p WHERE p.vendor_id = v.id)::int AS total_products
      FROM vendors v
-     WHERE v.is_verified = true
      ORDER BY v.name LIMIT 50`,
   );
   res.json({ vendors: result.rows });
