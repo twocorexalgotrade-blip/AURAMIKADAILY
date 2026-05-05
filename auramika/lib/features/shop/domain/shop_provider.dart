@@ -24,13 +24,15 @@ const _gradients = [
   [Color(0xFF180430), Color(0xFF460A88)],
 ];
 
-// Per-name colour overrides — key is the vendor name lowercased & trimmed
-const _nameColors = <String, Color>{
-  'test jeweles': Color(0xFF3A2600),  // dark antique gold
-};
-const _nameGradients = <String, List<Color>>{
-  'test jeweles': [Color(0xFF1E1300), Color(0xFF604000)],
-};
+Color _brandColorFor(String nameLower, int i) {
+  if (nameLower.contains('jewel')) return const Color(0xFF3A2600); // antique gold
+  return _brandColors[i % _brandColors.length];
+}
+
+List<Color> _gradientFor(String nameLower, int i) {
+  if (nameLower.contains('jewel')) return const [Color(0xFF1E1300), Color(0xFF604000)];
+  return _gradients[i % _gradients.length];
+}
 
 final shopsProvider = FutureProvider<List<ShopModel>>((ref) async {
   try {
@@ -43,7 +45,7 @@ final shopsProvider = FutureProvider<List<ShopModel>>((ref) async {
     final vendors = (res.data!['vendors'] as List).cast<Map<String, dynamic>>();
 
     final apiShops = vendors.asMap().entries.map((entry) {
-      final i = entry.key % _brandColors.length;
+      final i = entry.key;
       final v = entry.value;
       final nameLower = (v['name'] as String).toLowerCase().trim();
       return ShopModel(
@@ -51,8 +53,8 @@ final shopsProvider = FutureProvider<List<ShopModel>>((ref) async {
         name: v['name'] as String,
         description: (v['description'] as String?) ?? 'Premium jewelry collection',
         bannerImageUrl: (v['banner_url'] as String?) ?? '',
-        brandColor: _nameColors[nameLower] ?? _brandColors[i],
-        gradientColors: _nameGradients[nameLower] ?? _gradients[i],
+        brandColor: _brandColorFor(nameLower, i),
+        gradientColors: _gradientFor(nameLower, i),
         rating: (v['rating'] as num?)?.toDouble() ?? 0.0,
         totalProducts: (v['total_products'] as int?) ?? 0,
         tags: const [],
