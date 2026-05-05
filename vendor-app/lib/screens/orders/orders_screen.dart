@@ -18,7 +18,7 @@ const _oliveDeep = Color(0xFF4A5E20);
 
 List<VendorOrder> _applyFilter(List<VendorOrder> orders, String filter) {
   return switch (filter) {
-    'Pending'    => orders.where((o) => ['payment_pending', 'paid', 'processing'].contains(o.status)).toList(),
+    'Pending'    => orders.where((o) => ['payment_pending', 'paid', 'confirmed', 'processing'].contains(o.status)).toList(),
     'In Process' => orders.where((o) => o.status == 'shipped').toList(),
     'Completed'  => orders.where((o) => o.status == 'delivered').toList(),
     'Cancelled'  => orders.where((o) => ['cancelled', 'refunded'].contains(o.status)).toList(),
@@ -252,6 +252,56 @@ class _OrderCard extends ConsumerWidget {
           ),
         ),
 
+        // Delivery address
+        if (order.addressLine1 != null) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: _oliveDeep.withAlpha(10),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _oliveDeep.withAlpha(35), width: 0.8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.local_shipping_outlined, size: 13, color: _olive.withAlpha(180)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (order.addressName != null)
+                          Text(
+                            order.addressName!,
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.w700, color: _black),
+                          ),
+                        Text(
+                          [
+                            order.addressLine1,
+                            order.addressCity,
+                            if (order.addressPincode != null) '- ${order.addressPincode}',
+                          ].whereType<String>().join(', '),
+                          style: TextStyle(fontSize: 11, color: _olive.withAlpha(200)),
+                        ),
+                        if (order.addressPhone != null)
+                          Text(
+                            order.addressPhone!,
+                            style: TextStyle(fontSize: 11, color: _olive.withAlpha(200)),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+
         // Footer
         Padding(
           padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
@@ -421,6 +471,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (textColor, bg, borderColor) = switch (status) {
+      'confirmed'               => (_gold,                  _gold.withAlpha(22),             _gold.withAlpha(75)),
       'paid'                    => (_oliveDeep,             _oliveDeep.withAlpha(22),        _oliveDeep.withAlpha(75)),
       'processing'              => (_olive,                 _olive.withAlpha(22),            _olive.withAlpha(75)),
       'shipped'                 => (_gold,                  _gold.withAlpha(28),             _gold.withAlpha(75)),

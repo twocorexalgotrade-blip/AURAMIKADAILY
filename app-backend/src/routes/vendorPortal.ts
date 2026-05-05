@@ -129,6 +129,19 @@ router.get('/me', requireVendorAuth, async (req: VendorRequest, res: Response) =
   res.json(result.rows[0]);
 });
 
+// ── PUT /vendor/me/logo ────────────────────────────────────────────────────
+router.put('/me/logo', requireVendorAuth, async (req: VendorRequest, res: Response) => {
+  const { logo_url } = req.body as { logo_url?: string };
+  if (!logo_url || typeof logo_url !== 'string') {
+    throw new AppError(400, 'logo_url is required');
+  }
+  await pool.query(
+    'UPDATE vendors SET logo_url = $1 WHERE id = $2',
+    [logo_url, req.vendorId],
+  );
+  res.json({ logo_url });
+});
+
 // ── PUT /vendor/me/banner ──────────────────────────────────────────────────
 router.put('/me/banner', requireVendorAuth, async (req: VendorRequest, res: Response) => {
   const { banner_url } = req.body as { banner_url?: string };
@@ -236,6 +249,7 @@ router.get('/orders', requireVendorAuth, async (req: VendorRequest, res: Respons
   const result = await pool.query(
     `SELECT o.id, o.status, o.subtotal, o.total, o.is_express,
             o.cashfree_order_id, o.created_at, o.updated_at,
+            o.address_name, o.address_phone, o.address_line1, o.address_city, o.address_pincode,
             json_agg(
               json_build_object(
                 'id', oi.id,

@@ -46,6 +46,11 @@ class OrdersNotifier extends AsyncNotifier<List<VendorOrder>> {
           }).toList(),
           'created_at': o.createdAt.toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
+          'address_name': o.addressName,
+          'address_phone': o.addressPhone,
+          'address_line1': o.addressLine1,
+          'address_city': o.addressCity,
+          'address_pincode': o.addressPincode,
         });
       }).toList(),
     );

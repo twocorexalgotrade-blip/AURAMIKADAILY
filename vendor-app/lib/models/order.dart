@@ -38,6 +38,11 @@ class VendorOrder {
   final List<OrderItem> items;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? addressName;
+  final String? addressPhone;
+  final String? addressLine1;
+  final String? addressCity;
+  final String? addressPincode;
 
   const VendorOrder({
     required this.id,
@@ -49,6 +54,11 @@ class VendorOrder {
     required this.items,
     required this.createdAt,
     required this.updatedAt,
+    this.addressName,
+    this.addressPhone,
+    this.addressLine1,
+    this.addressCity,
+    this.addressPincode,
   });
 
   factory VendorOrder.fromJson(Map<String, dynamic> json) => VendorOrder(
@@ -63,6 +73,11 @@ class VendorOrder {
             .toList(),
         createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
+        addressName: json['address_name'] as String?,
+        addressPhone: json['address_phone'] as String?,
+        addressLine1: json['address_line1'] as String?,
+        addressCity: json['address_city'] as String?,
+        addressPincode: json['address_pincode'] as String?,
       );
 
   // Allowed transitions a vendor can make
