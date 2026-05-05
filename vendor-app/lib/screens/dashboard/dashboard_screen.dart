@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -10,12 +11,14 @@ import '../../providers/products_provider.dart';
 import '../../widgets/stat_card.dart';
 
 // Luxury palette: olive green · golden · black · white
-const _black     = Color(0xFF0A0A0A);
-const _darkCard  = Color(0xFF141414);
+const _black     = Color(0xFF1A2E1C);
+const _darkCard  = Color(0xFF152A19);
 const _gold      = Color(0xFFC9A84C);
 const _goldLight = Color(0xFFE8C97A);
 const _olive     = Color(0xFF6B7C3F);
 const _oliveDeep = Color(0xFF4A5E20);
+const _oliveSoft = Color(0xFF8FAF5A);
+const _oliveMint = Color(0xFFAAC47A);
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -42,7 +45,10 @@ class DashboardScreen extends ConsumerWidget {
           slivers: [
             // ── Luxury Header ─────────────────────────────────────────────────
             SliverToBoxAdapter(
-              child: _LuxuryHeader(vendorName: vendor?.name ?? ''),
+              child: _LuxuryHeader(
+                vendorName: vendor?.name ?? '',
+                bannerUrl: vendor?.bannerUrl,
+              ),
             ),
 
             // ── Stats ─────────────────────────────────────────────────────────
@@ -176,7 +182,8 @@ class DashboardScreen extends ConsumerWidget {
 
 class _LuxuryHeader extends StatelessWidget {
   final String vendorName;
-  const _LuxuryHeader({required this.vendorName});
+  final String? bannerUrl;
+  const _LuxuryHeader({required this.vendorName, this.bannerUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -189,13 +196,36 @@ class _LuxuryHeader extends StatelessWidget {
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF060806), Color(0xFF0C1006), Color(0xFF121808)],
+            colors: [Color(0xFF0C2214), Color(0xFF163520), Color(0xFF1A3E25)],
             stops: [0.0, 0.55, 1.0],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: Stack(children: [
+          // Banner photo (when set)
+          if (bannerUrl != null && bannerUrl!.isNotEmpty)
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: bannerUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => const SizedBox.shrink(),
+                errorWidget: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          // Dark gradient overlay so text stays readable over the photo
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xCC0C2214), Color(0xBB163520), Color(0xAA1A3E25)],
+                  stops: [0.0, 0.55, 1.0],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
           // Diagonal shine sweep
           Positioned.fill(
             child: Container(
@@ -286,6 +316,19 @@ class _LuxuryHeader extends StatelessWidget {
                     letterSpacing: 3.5,
                   ),
                 ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => context.go('/profile'),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(14),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _goldLight.withAlpha(80), width: 1),
+                    ),
+                    child: const Icon(Icons.person_outline_rounded, color: _goldLight, size: 18),
+                  ),
+                ),
               ]),
               const SizedBox(height: 14),
               Text(
@@ -371,7 +414,7 @@ class _LuxuryCTA extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         gradient: const LinearGradient(
-          colors: [Color(0xFF0A0A0A), Color(0xFF1C1C1C)],
+          colors: [Color(0xFF1A2E1C), Color(0xFF254A2A)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -442,19 +485,19 @@ class _StatsGrid extends StatelessWidget {
             label: 'Products',
             value: products.toString(),
             icon: Icons.inventory_2_outlined,
-            color: _olive,
+            color: _gold,
             dark: true),
         StatCard(
             label: 'Active Orders',
             value: activeOrders.toString(),
             icon: Icons.local_shipping_outlined,
-            color: _gold,
+            color: _goldLight,
             dark: true),
         StatCard(
             label: 'Total Orders',
             value: orders.length.toString(),
             icon: Icons.receipt_long_outlined,
-            color: _oliveDeep,
+            color: _gold,
             dark: true),
         StatCard(
             label: 'Revenue',
