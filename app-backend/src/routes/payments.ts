@@ -336,7 +336,33 @@ router.get('/verify/:cashfreeOrderId', requireAuth, async (req: AuthenticatedReq
   if (orderRes.rows.length === 0) throw new AppError(404, 'Order not found');
   if (orderRes.rows[0].user_uid !== req.uid) throw new AppError(403, 'Forbidden');
 
-  const cfRes = await cashfreeRequest('GET', `/orders/${cfOrderId}`, null);
+  const cfRes = await cashfreeRequest('GET', `/orders/${cfOrderId}`, null) as Record<string, unknown>;
+
+  // Proactive confirmation — webhook may be delayed or not configured in sandbox.
+  // If Cashfree says PAID and our order is still payment_pending, confirm it now.
+  if (cfRes['order_status'] === 'PAID') {
+    const upd = await pool.query(
+      `UPDATE orders SET status = 'confirmed', updated_at = NOW()
+       WHERE cashfree_order_id = $1 AND status = 'payment_pending'
+       RETURNING id, gift_card_code, gift_card_discount, user_uid`,
+      [cfOrderId],
+    );
+    if (upd.rows.length > 0) {
+      const order = upd.rows[0];
+      await pool.query('DELETE FROM cart_items WHERE user_uid = $1', [order.user_uid]);
+      if (order.gift_card_code && order.gift_card_discount > 0) {
+        const gc = await pool.query('SELECT remaining_amount FROM gift_cards WHERE code = $1', [order.gift_card_code]);
+        if (gc.rows.length > 0) {
+          const remaining = Math.max(0, (gc.rows[0].remaining_amount as number) - (order.gift_card_discount as number));
+          await pool.query(
+            'UPDATE gift_cards SET remaining_amount = $1, status = $2 WHERE code = $3',
+            [remaining, remaining <= 0 ? 'used' : 'active', order.gift_card_code],
+          );
+        }
+      }
+    }
+  }
+
   res.json(cfRes);
 });
 
