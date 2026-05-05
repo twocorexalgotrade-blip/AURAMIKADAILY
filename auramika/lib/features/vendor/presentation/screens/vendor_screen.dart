@@ -2,12 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/product_card.dart';
+import '../../../shop/domain/shop_models.dart';
 
 enum _SortOrder { featured, priceLow, priceHigh, nameAZ }
 
@@ -87,6 +90,65 @@ final _mockVendor = VendorInfo(
   ],
 );
 
+// ── Live vendor provider ──────────────────────────────────────────────────────
+final vendorInfoProvider =
+    FutureProvider.family<VendorInfo, String>((ref, vendorId) async {
+  final dio = ref.watch(apiServiceProvider);
+  try {
+    final results = await Future.wait([
+      dio.get<dynamic>('/vendors/$vendorId'),
+      dio.get<dynamic>('/vendors/$vendorId/products',
+          queryParameters: {'limit': '50'}),
+    ]);
+
+    final v = results[0].data as Map<String, dynamic>;
+    final rows =
+        (results[1].data['products'] as List).cast<Map<String, dynamic>>();
+
+    return VendorInfo(
+      id: v['id'] as String,
+      name: v['name'] as String,
+      tagline: (v['description'] as String?) ?? 'Premium Jewelry Collection',
+      location: 'India',
+      totalProducts: rows.length,
+      rating: (v['rating'] as num?)?.toDouble() ?? 4.5,
+      reviewCount: 0,
+      brandColor: AppColors.forestGreen,
+      products: rows.map((p) {
+        final imgs = p['image_urls'];
+        final url = (imgs is List && imgs.isNotEmpty) ? imgs.first as String : '';
+        return VendorProduct(
+          id: p['id'] as String,
+          name: (p['product_name'] as String?) ?? '',
+          price: (p['price'] as num).toDouble(),
+          material: (p['material'] as String?) ?? 'Gold',
+          imageUrl: url,
+          isExpress: (p['is_express'] as bool?) ?? false,
+        );
+      }).toList(),
+    );
+  } catch (_) {
+    // Only v1 (Auramika Studio) keeps its curated mock products
+    if (vendorId == 'v1') return _mockVendor;
+    // All other shops: show their real name/info but empty products
+    ShopModel? staticShop;
+    try {
+      staticShop = ShopData.allShops.firstWhere((s) => s.id == vendorId);
+    } catch (_) {}
+    return VendorInfo(
+      id: vendorId,
+      name: staticShop?.name ?? 'Store',
+      tagline: staticShop?.description ?? 'Premium Jewelry Collection',
+      location: staticShop?.location ?? 'India',
+      totalProducts: 0,
+      rating: staticShop?.rating ?? 4.5,
+      reviewCount: 0,
+      brandColor: AppColors.forestGreen,
+      products: const [],
+    );
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // VENDOR SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,24 +161,23 @@ final _mockVendor = VendorInfo(
 ///   • Sticky material tabs: [All] [Gold] [Silver]
 ///   • Filtered 2-column product grid
 ///   • "Gold" tab STRICTLY shows only Gold items
-class VendorScreen extends StatefulWidget {
-  final String? vendorId; // from router; ignored in mock (always shows _mockVendor)
+class VendorScreen extends ConsumerStatefulWidget {
+  final String? vendorId;
   const VendorScreen({super.key, this.vendorId});
 
   @override
-  State<VendorScreen> createState() => _VendorScreenState();
+  ConsumerState<VendorScreen> createState() => _VendorScreenState();
 }
 
-class _VendorScreenState extends State<VendorScreen>
+class _VendorScreenState extends ConsumerState<VendorScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final vendor = _mockVendor;
   _SortOrder _sortOrder = _SortOrder.featured;
 
   // ── Material filter tabs ──────────────────────────────────────────────────
   static const List<String> _tabs = ['All', 'Gold', 'Silver', 'Coming Soon'];
 
-  List<VendorProduct> get _filteredProducts {
+  List<VendorProduct> _filteredProducts(VendorInfo vendor) {
     final tab = _tabs[_tabController.index];
     var list = tab == 'All'
         ? vendor.products.toList()
@@ -149,7 +210,7 @@ class _VendorScreenState extends State<VendorScreen>
     super.dispose();
   }
 
-  void _showShareSheet() {
+  void _showShareSheet(VendorInfo vendor) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -157,7 +218,7 @@ class _VendorScreenState extends State<VendorScreen>
     );
   }
 
-  void _showSearchSheet() {
+  void _showSearchSheet(VendorInfo vendor) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -188,7 +249,11 @@ class _VendorScreenState extends State<VendorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredProducts;
+    final vendorAsync = ref.watch(
+      vendorInfoProvider(widget.vendorId?.isNotEmpty == true ? widget.vendorId! : 'v1'),
+    );
+    final vendor = vendorAsync.valueOrNull ?? _mockVendor;
+    final filtered = _filteredProducts(vendor);
     final currentTab = _tabs[_tabController.index];
 
     return Scaffold(
@@ -206,16 +271,16 @@ class _VendorScreenState extends State<VendorScreen>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
               color: AppColors.white,
-              onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+              onPressed: () => context.canPop() ? context.pop() : context.go('/shop'),
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.white),
-                onPressed: _showShareSheet,
+                onPressed: () => _showShareSheet(vendor),
               ),
               IconButton(
                 icon: const Icon(Icons.search_rounded, size: 20, color: AppColors.white),
-                onPressed: _showSearchSheet,
+                onPressed: () => _showSearchSheet(vendor),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -770,6 +835,39 @@ class _EmptyMaterialState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (material == 'All') {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.textMuted.withValues(alpha: 0.3), width: 1),
+                color: AppColors.surface,
+              ),
+              child: const Icon(Icons.storefront_outlined, size: 32, color: AppColors.textMuted),
+            )
+                .animate()
+                .fadeIn(duration: AppConstants.animSlow)
+                .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack),
+            const SizedBox(height: 20),
+            Text(
+              'No items yet',
+              style: AppTextStyles.headlineSmall.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This store hasn\'t added any products yet',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (material == 'Coming Soon') {
       return Center(
         child: Column(

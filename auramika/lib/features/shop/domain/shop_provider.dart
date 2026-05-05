@@ -50,10 +50,10 @@ final shopsProvider = FutureProvider<List<ShopModel>>((ref) async {
       );
     }).toList();
 
-    // Keep static curated shops, then append any real vendor-app stores
+    // Static shops: Auramika first, then real vendor-app stores, then the rest
     final staticIds = ShopData.allShops.map((s) => s.id).toSet();
     final newVendors = apiShops.where((s) => !staticIds.contains(s.id)).toList();
-    return [...ShopData.allShops, ...newVendors];
+    return [ShopData.allShops.first, ...newVendors, ...ShopData.allShops.skip(1)];
   } catch (_) {
     return ShopData.allShops;
   }
