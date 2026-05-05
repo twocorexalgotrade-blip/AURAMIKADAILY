@@ -141,6 +141,11 @@ export async function runMigrations() {
     );
   `);
 
+  // Idempotent column additions for tables that may predate schema changes
+  await pool.query(`
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS brand_name TEXT NOT NULL DEFAULT '';
+  `);
+
   // Hot-path indexes — idempotent (IF NOT EXISTS)
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_orders_user_uid          ON orders(user_uid);

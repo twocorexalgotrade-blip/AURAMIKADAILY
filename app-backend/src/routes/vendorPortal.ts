@@ -221,7 +221,7 @@ router.get('/orders', requireVendorAuth, async (req: VendorRequest, res: Respons
   const offset = parseInt((req.query['offset'] as string) || '0', 10);
 
   const result = await pool.query(
-    `SELECT DISTINCT o.id, o.status, o.subtotal, o.total, o.is_express,
+    `SELECT o.id, o.status, o.subtotal, o.total, o.is_express,
             o.cashfree_order_id, o.created_at, o.updated_at,
             json_agg(
               json_build_object(
@@ -233,9 +233,7 @@ router.get('/orders', requireVendorAuth, async (req: VendorRequest, res: Respons
                 'quantity', oi.quantity,
                 'image_url', oi.image_url
               )
-            ) FILTER (WHERE oi.product_id IN (
-              SELECT id FROM products WHERE vendor_id = $1
-            )) AS items
+            ) AS items
      FROM orders o
      JOIN order_items oi ON oi.order_id = o.id
      WHERE oi.product_id IN (SELECT id FROM products WHERE vendor_id = $1)
