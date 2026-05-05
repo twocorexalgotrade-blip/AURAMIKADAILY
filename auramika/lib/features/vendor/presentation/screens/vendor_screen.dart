@@ -70,7 +70,7 @@ final _mockVendor = VendorInfo(
   totalProducts: 16,
   rating: 4.8,
   reviewCount: 342,
-  brandColor: AppColors.forestGreen,
+  brandColor: const Color(0xFF0C2B1E),
   products: const [
     VendorProduct(id: 'e1', name: 'Chunky Gold Hoops', price: 499, material: 'Gold', imageUrl: 'assets/images/products/e1_gold_hoops.jpg', isExpress: true),
     VendorProduct(id: 'e3', name: 'Pearl Studs', price: 299, material: 'Gold', imageUrl: 'assets/images/products/e3_pearl_studs.jpg', isExpress: true),
@@ -275,7 +275,21 @@ class _VendorScreenState extends ConsumerState<VendorScreen>
           )
         : _mockVendor;
 
-    final vendor = vendorAsync.valueOrNull ?? fallback;
+    final rawVendor = vendorAsync.valueOrNull ?? fallback;
+    // Always use the colour from the shop grid so card and screen match exactly
+    final vendor = shopModel != null
+        ? VendorInfo(
+            id: rawVendor.id,
+            name: rawVendor.name,
+            tagline: rawVendor.tagline,
+            location: rawVendor.location,
+            totalProducts: rawVendor.totalProducts,
+            rating: rawVendor.rating,
+            reviewCount: rawVendor.reviewCount,
+            brandColor: shopModel.brandColor,
+            products: rawVendor.products,
+          )
+        : rawVendor;
     final filtered = _filteredProducts(vendor);
     final currentTab = _tabs[_tabController.index];
 

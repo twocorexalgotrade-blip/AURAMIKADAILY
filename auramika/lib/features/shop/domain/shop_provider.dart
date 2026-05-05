@@ -4,23 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import 'shop_models.dart';
 
-// Deterministic brand palettes cycled by vendor index
+// Deterministic brand palettes cycled by vendor index — must stay in sync with
+// ShopData.allShops colours so API shops get clearly distinct jewel tones
 const _brandColors = [
-  Color(0xFF1A2F25),
-  Color(0xFF6B5334),
-  Color(0xFF1A1A2E),
-  Color(0xFF8B4513),
-  Color(0xFF2C2C2C),
-  Color(0xFF4A0A60),
+  Color(0xFF0C2B1E),  // forest green
+  Color(0xFF5A0E1E),  // burgundy
+  Color(0xFF0A1A38),  // royal navy
+  Color(0xFF7A2C08),  // cognac
+  Color(0xFF1A1816),  // obsidian
+  Color(0xFF2C0858),  // amethyst
 ];
 
 const _gradients = [
-  [Color(0xFF0F1F18), Color(0xFF2D5016)],
-  [Color(0xFF4A3520), Color(0xFF8B6B44)],
-  [Color(0xFF0D0D1A), Color(0xFF2A2A40)],
-  [Color(0xFF6B3010), Color(0xFFAA6030)],
-  [Color(0xFF1A1A1A), Color(0xFF3D3D3D)],
-  [Color(0xFF2D0440), Color(0xFF6B1580)],
+  [Color(0xFF061810), Color(0xFF1A4828)],
+  [Color(0xFF380810), Color(0xFF881828)],
+  [Color(0xFF060F22), Color(0xFF102050)],
+  [Color(0xFF4A1A04), Color(0xFFA04818)],
+  [Color(0xFF0A0908), Color(0xFF2C2A26)],
+  [Color(0xFF180430), Color(0xFF460A88)],
 ];
 
 final shopsProvider = FutureProvider<List<ShopModel>>((ref) async {
