@@ -6,12 +6,12 @@ import '../../core/theme.dart';
 import '../../models/product.dart';
 import '../../providers/products_provider.dart';
 
-// Luxury palette — matches dashboard
-const _black     = Color(0xFF0A0A0A);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
-const _oliveDeep = Color(0xFF4A5E20);
+// Auramika Daily palette
+const _black     = Color(0xFF1A2F25);
+const _gold      = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF5E9A0);
+const _olive     = Color(0xFF1A2F25);
+const _oliveDeep = Color(0xFF1A2F25);
 
 class ProductsScreen extends ConsumerWidget {
   const ProductsScreen({super.key});
@@ -35,6 +35,10 @@ class ProductsScreen extends ConsumerWidget {
             fontSize: 18,
             letterSpacing: 0.2,
           ),
+        ),
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Icon(Icons.diamond_outlined, color: _goldLight, size: 22),
         ),
         iconTheme: const IconThemeData(color: _goldLight),
         actionsIconTheme: const IconThemeData(color: _goldLight),

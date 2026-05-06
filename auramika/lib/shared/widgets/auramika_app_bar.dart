@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,8 +9,10 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/router/app_router.dart';
+import '../../core/services/api_service.dart';
 import '../../features/cart/presentation/controllers/cart_controller.dart';
 import '../../features/home/domain/home_models.dart';
+import '../../features/shop/domain/shop_models.dart';
 
 // Top-level alias so _ProductSearchDelegate can call showSearch without
 // shadowing conflict from AuramikaAppBar's `showSearch` bool field.
@@ -156,7 +159,7 @@ class AuramikaAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         color: iconColor,
                         onTap: () => _invokeSearch(
                           context: context,
-                          delegate: _ProductSearchDelegate(),
+                          delegate: _ProductSearchDelegate(ref.read(apiServiceProvider)),
                         ),
                       ),
                     if (showCart)
@@ -232,19 +235,66 @@ class _ProfileAvatarButton extends StatelessWidget {
 
 // ── Product Search Delegate ───────────────────────────────────────────────────
 class _ProductSearchDelegate extends SearchDelegate<HomeProduct?> {
+  final Dio _dio;
+  _ProductSearchDelegate(this._dio);
+
   @override
-  String get searchFieldLabel => 'Search jewelry…';
+  String get searchFieldLabel => 'Search jewelry, shops…';
 
-  List<HomeProduct> get _all => HomeData.allProducts;
+  List<ShopModel> get _allShops => ShopData.allShops;
 
-  List<HomeProduct> _filter(String q) {
+  Future<List<HomeProduct>> _fetchProducts(String q) async {
+    final trimmed = q.trim();
+    try {
+      if (trimmed.isEmpty) {
+        final res = await _dio.get<Map<String, dynamic>>(
+          '/products',
+          queryParameters: {'limit': '12'},
+        );
+        final rows = (res.data!['products'] as List).cast<Map<String, dynamic>>();
+        return rows.map(_rowToProduct).toList();
+      }
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/products/search',
+        queryParameters: {'q': trimmed},
+      );
+      final rows = (res.data!['products'] as List).cast<Map<String, dynamic>>();
+      return rows.map(_rowToProduct).toList();
+    } catch (_) {
+      // fallback: local filter on mock data
+      if (trimmed.isEmpty) return HomeData.allProducts.take(12).toList();
+      final lq = trimmed.toLowerCase();
+      return HomeData.allProducts.where((p) {
+        return p.productName.toLowerCase().contains(lq) ||
+            p.brandName.toLowerCase().contains(lq) ||
+            p.material.toLowerCase().contains(lq) ||
+            p.vibe.toLowerCase().contains(lq);
+      }).toList();
+    }
+  }
+
+  HomeProduct _rowToProduct(Map<String, dynamic> p) {
+    final imgs = p['image_urls'];
+    return HomeProduct(
+      id: p['id'] as String,
+      brandName: (p['brand_name'] as String?) ?? 'AURAMIKA',
+      productName: (p['product_name'] as String?) ?? '',
+      price: (p['price'] as num).toDouble(),
+      material: (p['material'] as String?) ?? 'Gold',
+      imageUrl: (imgs is List && imgs.isNotEmpty) ? imgs.first as String? : null,
+      isExpressAvailable: (p['is_express'] as bool?) ?? false,
+      vibe: (p['vibe'] as String?) ?? 'All',
+    );
+  }
+
+  List<ShopModel> _filterShops(String q) {
     final query = q.toLowerCase().trim();
-    if (query.isEmpty) return _all.take(12).toList();
-    return _all.where((p) {
-      return p.productName.toLowerCase().contains(query) ||
-          p.brandName.toLowerCase().contains(query) ||
-          p.material.toLowerCase().contains(query) ||
-          p.vibe.toLowerCase().contains(query);
+    if (query.isEmpty) return _allShops.take(3).toList();
+    return _allShops.where((s) {
+      return s.name.toLowerCase().contains(query) ||
+          s.description.toLowerCase().contains(query) ||
+          s.location.toLowerCase().contains(query) ||
+          s.tags.any((t) => t.toLowerCase().contains(query));
     }).toList();
   }
 
@@ -282,40 +332,139 @@ class _ProductSearchDelegate extends SearchDelegate<HomeProduct?> {
       );
 
   @override
-  Widget buildResults(BuildContext context) => _buildList(context, _filter(query));
+  Widget buildResults(BuildContext context) =>
+      _buildCombined(context, query);
 
   @override
-  Widget buildSuggestions(BuildContext context) => _buildList(context, _filter(query));
+  Widget buildSuggestions(BuildContext context) =>
+      _buildCombined(context, query);
 
-  Widget _buildList(BuildContext context, List<HomeProduct> results) {
-    if (results.isEmpty) {
-      return Center(
-        child: Text(
-          'No results for "$query"',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
-      );
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: results.length,
-      separatorBuilder: (_, __) =>
-          const Divider(height: 1, color: AppColors.divider),
-      itemBuilder: (context, i) {
-        final p = results[i];
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: _productThumb(p.imageUrl),
-          ),
-          title: Text(p.productName, style: AppTextStyles.titleMedium.copyWith(fontSize: 13)),
-          subtitle: Text(
-            '${p.material} · ₹${p.price.toStringAsFixed(0)}',
-            style: AppTextStyles.priceTag.copyWith(fontSize: 12),
-          ),
-          onTap: () {
-            close(context, p);
-            context.push('/product/${p.id}');
+  Widget _buildCombined(BuildContext context, String q) {
+    final shops = _filterShops(q);
+    return FutureBuilder<List<HomeProduct>>(
+      future: _fetchProducts(q),
+      builder: (context, snapshot) {
+        final products = snapshot.data ?? [];
+
+        if (snapshot.connectionState == ConnectionState.waiting && products.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: AppColors.gold,
+              strokeWidth: 1.5,
+            ),
+          );
+        }
+
+        if (shops.isEmpty && products.isEmpty) {
+          return Center(
+            child: Text(
+              'No results for "$q"',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+            ),
+          );
+        }
+
+        final items = <_SearchItem>[];
+        if (shops.isNotEmpty) {
+          items.add(_SearchItem.shopHeader());
+          for (final s in shops) items.add(_SearchItem.shop(s));
+        }
+        if (products.isNotEmpty) {
+          items.add(_SearchItem.productHeader());
+          for (final p in products) items.add(_SearchItem.product(p));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: items.length,
+          itemBuilder: (context, i) {
+            final item = items[i];
+            switch (item.type) {
+              case _SearchItemType.shopHeader:
+                return _SearchSectionHeader(
+                  icon: Icons.storefront_outlined,
+                  label: 'SHOPS',
+                );
+              case _SearchItemType.productHeader:
+                return _SearchSectionHeader(
+                  icon: Icons.diamond_outlined,
+                  label: 'PRODUCTS',
+                );
+              case _SearchItemType.shop:
+                final s = item.shop!;
+                return ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: s.gradientColors,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Center(
+                      child: Text(
+                        s.name[0],
+                        style: AppTextStyles.titleSmall
+                            .copyWith(color: AppColors.gold, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  title: Text(s.name,
+                      style: AppTextStyles.titleMedium.copyWith(fontSize: 13)),
+                  subtitle: Text(
+                    '${s.totalProducts} items · ${s.location}',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(fontSize: 10, color: AppColors.textMuted),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, size: 11, color: AppColors.gold),
+                      const SizedBox(width: 2),
+                      Text('${s.rating}',
+                          style: AppTextStyles.labelSmall
+                              .copyWith(color: AppColors.gold, fontSize: 11)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          size: 12, color: AppColors.textMuted),
+                    ],
+                  ),
+                  onTap: () {
+                    close(context, null);
+                    context.push(AppRoutes.shopVendor(s.id));
+                  },
+                );
+              case _SearchItemType.product:
+                final p = item.homeProduct!;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: _productThumb(p.imageUrl),
+                      ),
+                      title: Text(p.productName,
+                          style:
+                              AppTextStyles.titleMedium.copyWith(fontSize: 13)),
+                      subtitle: Text(
+                        '${p.material} · ₹${p.price.toStringAsFixed(0)}',
+                        style: AppTextStyles.priceTag.copyWith(fontSize: 12),
+                      ),
+                      onTap: () {
+                        close(context, p);
+                        context.push('/product/${p.id}');
+                      },
+                    ),
+                    const Divider(height: 1, color: AppColors.divider),
+                  ],
+                );
+            }
           },
         );
       },
@@ -352,6 +501,55 @@ class _ProductSearchDelegate extends SearchDelegate<HomeProduct?> {
         color: AppColors.surface,
         child: const Icon(Icons.diamond_outlined, size: 20, color: AppColors.gold),
       );
+}
+
+// ── Search Section Header ─────────────────────────────────────────────────────
+class _SearchSectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _SearchSectionHeader({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 13, color: AppColors.textMuted),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: AppTextStyles.categoryChip.copyWith(
+              fontSize: 10,
+              letterSpacing: 2.0,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Search Item (flat list union type) ────────────────────────────────────────
+enum _SearchItemType { shopHeader, productHeader, shop, product }
+
+class _SearchItem {
+  final _SearchItemType type;
+  final ShopModel? shop;
+  final HomeProduct? homeProduct;
+
+  const _SearchItem._({required this.type, this.shop, this.homeProduct});
+
+  factory _SearchItem.shopHeader() =>
+      const _SearchItem._(type: _SearchItemType.shopHeader);
+  factory _SearchItem.productHeader() =>
+      const _SearchItem._(type: _SearchItemType.productHeader);
+  factory _SearchItem.shop(ShopModel s) =>
+      _SearchItem._(type: _SearchItemType.shop, shop: s);
+  factory _SearchItem.product(HomeProduct p) =>
+      _SearchItem._(type: _SearchItemType.product, homeProduct: p);
 }
 
 // ── Cart Icon with Badge ──────────────────────────────────────────────────────

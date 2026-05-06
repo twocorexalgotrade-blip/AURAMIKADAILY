@@ -3,22 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // ── Light palette ──────────────────────────────────────────────────────────
-  static const Color primary       = Color(0xFFC9A84C); // gold
-  static const Color secondary     = Color(0xFF6B7C3F); // olive green
-  static const Color background    = Color(0xFFFDFAF3); // warm cream
+  static const Color primary       = Color(0xFFD4AF37); // burnished gold
+  static const Color secondary     = Color(0xFF1A2F25); // deep forest green
+  static const Color background    = Color(0xFFFAFAF5); // alabaster cream
   static const Color surface       = Color(0xFFFFFFFF); // white cards
-  static const Color surfaceVariant= Color(0xFFF5F0E0); // light gold input bg
-  static const Color border        = Color(0xFFE8E2C8); // soft gold border
-  static const Color textPrimary   = Color(0xFF1C1A15); // warm near-black
-  static const Color textSecondary = Color(0xFF7A7560); // warm grey
-  static const Color success       = Color(0xFF3D7A3D);
+  static const Color surfaceVariant= Color(0xFFF5F5EE); // slight cream tint
+  static const Color border        = Color(0xFFE0DDD5); // warm divider
+  static const Color textPrimary   = Color(0xFF1A2F25); // deep forest green
+  static const Color textSecondary = Color(0xFF8A8A8A); // muted grey
+  static const Color success       = Color(0xFF2E7D32);
   static const Color warning       = Color(0xFFD97706);
-  static const Color error         = Color(0xFFC0392B);
+  static const Color error         = Color(0xFFB00020);
 
   // ── Shadow ─────────────────────────────────────────────────────────────────
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: const Color(0xFFC9A84C).withAlpha(18),
+      color: const Color(0xFFD4AF37).withAlpha(18),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),

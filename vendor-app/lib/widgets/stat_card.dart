@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
-const _darkCardBg = Color(0xFF141414);
-const _cardGold   = Color(0xFFC9A84C);
+const _darkCardBg = Color(0xFF1A2F25);
+const _cardGold   = Color(0xFFD4AF37);
 
 class StatCard extends StatelessWidget {
   final String label;

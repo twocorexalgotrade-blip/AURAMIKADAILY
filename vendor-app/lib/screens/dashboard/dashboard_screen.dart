@@ -8,17 +8,18 @@ import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/orders_provider.dart';
 import '../../providers/products_provider.dart';
+import '../../providers/stock_demand_provider.dart';
 import '../../widgets/stat_card.dart';
 
-// Luxury palette: olive green · golden · black · white
-const _black     = Color(0xFF1A2E1C);
-const _darkCard  = Color(0xFF152A19);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
-const _oliveDeep = Color(0xFF4A5E20);
-const _oliveSoft = Color(0xFF8FAF5A);
-const _oliveMint = Color(0xFFAAC47A);
+// Auramika Daily palette
+const _black     = Color(0xFF1A2F25);
+const _darkCard  = Color(0xFF0F1F18);
+const _gold      = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF5E9A0);
+const _olive     = Color(0xFF1A2F25);
+const _oliveDeep = Color(0xFF1A2F25);
+const _oliveSoft = Color(0xFFD4AF37);
+const _oliveMint = Color(0xFFF5E9A0);
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -28,6 +29,7 @@ class DashboardScreen extends ConsumerWidget {
     final vendor        = ref.watch(authProvider).valueOrNull;
     final productsAsync = ref.watch(productsProvider);
     final ordersAsync   = ref.watch(ordersProvider);
+    final demandAsync   = ref.watch(stockDemandProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -38,6 +40,7 @@ class DashboardScreen extends ConsumerWidget {
           await Future.wait([
             ref.read(productsProvider.notifier).refresh(),
             ref.read(ordersProvider.notifier).refresh(),
+            ref.read(stockDemandProvider.notifier).refresh(),
           ]);
         },
         child: CustomScrollView(
@@ -73,6 +76,24 @@ class DashboardScreen extends ConsumerWidget {
                       },
                     ),
                   ),
+                ),
+              ),
+            ),
+
+            // ── Stock Demand ──────────────────────────────────────────────────
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: demandAsync.when(
+                  data: (items) => items.isEmpty
+                      ? const SizedBox.shrink()
+                      : _StockDemandSection(
+                          items: items,
+                          onRefresh: () =>
+                              ref.read(stockDemandProvider.notifier).refresh(),
+                        ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -414,7 +435,7 @@ class _LuxuryCTA extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         gradient: const LinearGradient(
-          colors: [Color(0xFF1A2E1C), Color(0xFF254A2A)],
+          colors: [Color(0xFF0F1F18), Color(0xFF1A2F25)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -451,6 +472,166 @@ class _LuxuryCTA extends StatelessWidget {
   }
 }
 
+// ── Stock Demand Section ───────────────────────────────────────────────────────
+
+class _StockDemandSection extends StatelessWidget {
+  final List<StockDemandItem> items;
+  final VoidCallback onRefresh;
+  const _StockDemandSection({required this.items, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Customer Demand',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: _black,
+                      letterSpacing: 0.2),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Out-of-stock items customers are waiting for',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w400),
+                ),
+              ],
+            ),
+          ),
+        ]),
+        const SizedBox(height: 6),
+        Container(
+          height: 1.5,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [_gold, _goldLight, Colors.transparent],
+              stops: [0.0, 0.35, 1.0],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...items.map((item) => _DemandTile(item: item)),
+      ],
+    );
+  }
+}
+
+class _DemandTile extends StatelessWidget {
+  final StockDemandItem item;
+  const _DemandTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item.productName;
+    final count = item.demandCount;
+    final imageUrl = item.imageUrl;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _gold.withAlpha(65)),
+        boxShadow: [
+          BoxShadow(color: _gold.withAlpha(16), blurRadius: 12, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Row(children: [
+        // Product thumbnail
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: imageUrl.isNotEmpty && imageUrl.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => _placeholder(),
+                  )
+                : _placeholder(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Name + out-of-stock badge
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              name,
+              style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: _black),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.error.withAlpha(18),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AppTheme.error.withAlpha(60), width: 0.8),
+              ),
+              child: const Text('Out of stock',
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.error,
+                      fontWeight: FontWeight.w700)),
+            ),
+          ]),
+        ),
+        const SizedBox(width: 12),
+        // Demand count bubble
+        Column(children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: count > 0 ? _gold.withAlpha(28) : _olive.withAlpha(15),
+              border: Border.all(
+                  color: count > 0 ? _gold.withAlpha(120) : _olive.withAlpha(40),
+                  width: 1),
+            ),
+            child: Center(
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: count > 0 ? _gold : _olive),
+              ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            count == 1 ? 'waiting' : 'waiting',
+            style: const TextStyle(
+                fontSize: 9,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w500),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _placeholder() => Container(
+        color: _olive.withAlpha(15),
+        child: const Icon(Icons.image_outlined, color: _olive, size: 20),
+      );
+}
+
 // ── Stats grid ─────────────────────────────────────────────────────────────────
 
 class _StatsGrid extends StatelessWidget {
@@ -461,10 +642,13 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeOrders = orders
-        .where((o) => ['paid', 'processing', 'shipped'].contains(o.status))
+        .where((o) => ['payment_pending', 'confirmed', 'paid', 'processing', 'shipped'].contains(o.status))
+        .length;
+    final completedOrders = orders
+        .where((o) => !['cancelled', 'refunded', 'payment_failed'].contains(o.status))
         .length;
     final totalRevenue = orders
-        .where((o) => ['paid', 'processing', 'shipped', 'delivered'].contains(o.status))
+        .where((o) => ['confirmed', 'paid', 'processing', 'shipped', 'delivered'].contains(o.status))
         .fold(0.0, (s, o) => s + o.total);
 
     final revenueLabel = totalRevenue >= 10000000
@@ -495,7 +679,7 @@ class _StatsGrid extends StatelessWidget {
             dark: true),
         StatCard(
             label: 'Total Orders',
-            value: orders.length.toString(),
+            value: completedOrders.toString(),
             icon: Icons.receipt_long_outlined,
             color: _gold,
             dark: true),

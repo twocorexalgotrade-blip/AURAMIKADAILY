@@ -8,13 +8,13 @@ import '../../providers/orders_provider.dart';
 
 const _filters = ['All', 'Pending', 'In Process', 'Completed', 'Cancelled'];
 
-// Luxury palette — matches dashboard
-const _black     = Color(0xFF1A2E1C);
-const _darkCard  = Color(0xFF152A19);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
-const _oliveDeep = Color(0xFF4A5E20);
+// Auramika Daily palette
+const _black     = Color(0xFF1A2F25);
+const _darkCard  = Color(0xFF0F1F18);
+const _gold      = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF5E9A0);
+const _olive     = Color(0xFF1A2F25);
+const _oliveDeep = Color(0xFF1A2F25);
 
 List<VendorOrder> _applyFilter(List<VendorOrder> orders, String filter) {
   return switch (filter) {

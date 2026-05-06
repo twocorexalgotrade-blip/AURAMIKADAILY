@@ -37,11 +37,19 @@ const List<String> kMaterials = [
 ];
 
 // Luxury palette — matches dashboard
-const _black     = Color(0xFF0A0A0A);
-const _darkCard  = Color(0xFF141414);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
+const _black     = Color(0xFF1A2F25);
+const _darkCard  = Color(0xFF0F1F18);
+const _gold      = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF5E9A0);
+const _olive     = Color(0xFF1A2F25);
+
+Product? _findProduct(List<Product>? list, String? id) {
+  if (list == null || id == null) return null;
+  for (final p in list) {
+    if (p.id == id) return p;
+  }
+  return null;
+}
 
 class ProductFormScreen extends HookConsumerWidget {
   final String? productId;
@@ -51,30 +59,87 @@ class ProductFormScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(productsProvider);
-    final product = isEditing
-        ? productsAsync.value?.firstWhere((p) => p.id == productId,
-            orElse: () => throw StateError('not found'))
-        : null;
-
-    final nameCtrl      = useTextEditingController(text: product?.productName ?? '');
-    final brandCtrl     = useTextEditingController(text: product?.brandName ?? '');
-    final descCtrl      = useTextEditingController(text: product?.description ?? '');
-    final priceCtrl     = useTextEditingController(text: product?.price.toStringAsFixed(0) ?? '');
-    final origPriceCtrl = useTextEditingController(text: product?.originalPrice?.toStringAsFixed(0) ?? '');
+    // ── Hooks (must be called unconditionally, before any early return) ──────
+    final nameCtrl      = useTextEditingController();
+    final brandCtrl     = useTextEditingController();
+    final descCtrl      = useTextEditingController();
+    final priceCtrl     = useTextEditingController();
+    final origPriceCtrl = useTextEditingController();
     final urlCtrl       = useTextEditingController();
 
-    final selectedCategory = useState<String?>(product?.category);
-    final selectedVibe     = useState<String?>(product?.vibe);
-    final selectedMaterial = useState<String?>(
-      product?.material != null && kMaterials.contains(product!.material)
-          ? product.material : null,
-    );
-    final inStock    = useState(product?.inStock ?? true);
-    final isExpress  = useState(product?.isExpress ?? false);
-    final imageUrls  = useState<List<String>>(product?.imageUrls ?? []);
+    final selectedCategory = useState<String?>(null);
+    final selectedVibe     = useState<String?>(null);
+    final selectedMaterial = useState<String?>(null);
+    final inStock    = useState(true);
+    final isExpress  = useState(false);
+    final imageUrls  = useState<List<String>>([]);
     final localFiles = useState<List<File>>([]);
     final saving     = useState(false);
+    final initialized = useRef(false); // prevents re-init on provider rebuilds
+
+    // ── Provider ─────────────────────────────────────────────────────────────
+    final productsAsync = ref.watch(productsProvider);
+    final product = _findProduct(productsAsync.value, isEditing ? productId : null);
+
+    // ── Populate controllers once when product data arrives (edit mode) ──────
+    useEffect(() {
+      if (isEditing && !initialized.value && product != null) {
+        nameCtrl.text      = product.productName;
+        brandCtrl.text     = product.brandName;
+        descCtrl.text      = product.description ?? '';
+        priceCtrl.text     = product.price.toStringAsFixed(0);
+        origPriceCtrl.text = product.originalPrice?.toStringAsFixed(0) ?? '';
+        selectedCategory.value = product.category;
+        selectedVibe.value     = product.vibe;
+        selectedMaterial.value = (product.material != null && kMaterials.contains(product.material))
+            ? product.material : null;
+        inStock.value   = product.inStock;
+        isExpress.value = product.isExpress;
+        imageUrls.value = List<String>.from(product.imageUrls);
+        initialized.value = true;
+      }
+      return null;
+    }, [product]);
+
+    // ── Loading / error guard for edit mode ──────────────────────────────────
+    if (isEditing && !initialized.value) {
+      if (productsAsync.isLoading) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppBar(
+            backgroundColor: _black,
+            title: const Text('Edit Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: _goldLight),
+              onPressed: () => context.go('/products'),
+            ),
+          ),
+          body: const Center(child: CircularProgressIndicator(color: _gold, strokeWidth: 2)),
+        );
+      }
+      if (productsAsync.hasValue && product == null) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppBar(
+            backgroundColor: _black,
+            title: const Text('Edit Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: _goldLight),
+              onPressed: () => context.go('/products'),
+            ),
+          ),
+          body: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.error_outline, color: AppTheme.error, size: 40),
+              const SizedBox(height: 12),
+              const Text('Product not found', style: TextStyle(color: AppTheme.textSecondary)),
+              const SizedBox(height: 16),
+              TextButton(onPressed: () => context.go('/products'), child: const Text('Go back')),
+            ]),
+          ),
+        );
+      }
+    }
 
     Future<void> pickFromGallery() async {
       try {
@@ -171,11 +236,14 @@ class ProductFormScreen extends HookConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: _black,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: _goldLight, size: 20),
+          onPressed: saving.value ? null : () => context.go('/products'),
+        ),
         title: Text(
           isEditing ? 'Edit Product' : 'New Product',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
@@ -193,10 +261,6 @@ class ProductFormScreen extends HookConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: saving.value ? null : () => context.go('/products'),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
-          ),
           TextButton(
             onPressed: saving.value ? null : save,
             child: saving.value
@@ -471,14 +535,38 @@ class _Dropdown extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<String>(
-    value: value,
-    onChanged: onChanged,
-    dropdownColor: AppTheme.surface,
-    style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-    decoration: InputDecoration(labelText: label),
-    items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-  );
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE0DDD5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: AppTheme.surfaceVariant,
+      ),
+      isEmpty: value == null,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isDense: true,
+          isExpanded: true,
+          dropdownColor: AppTheme.surface,
+          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+          onChanged: onChanged,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        ),
+      ),
+    );
+  }
 }
 
 class _Toggle extends StatelessWidget {

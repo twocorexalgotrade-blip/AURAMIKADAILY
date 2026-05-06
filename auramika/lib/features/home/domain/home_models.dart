@@ -36,6 +36,7 @@ class HomeProduct {
   final String? imageUrl;
   final bool isExpressAvailable;
   final bool isWishlisted;
+  final bool inStock;
   final String vibe; // which vibe category it belongs to
 
   const HomeProduct({
@@ -47,6 +48,7 @@ class HomeProduct {
     this.imageUrl,
     this.isExpressAvailable = true,
     this.isWishlisted = false,
+    this.inStock = true,
     this.vibe = 'All',
   });
 }

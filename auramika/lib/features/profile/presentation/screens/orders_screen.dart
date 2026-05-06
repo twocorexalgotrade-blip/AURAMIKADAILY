@@ -12,7 +12,7 @@ class OrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orders = ref.watch(ordersProvider);
+    final ordersAsync = ref.watch(ordersProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -23,23 +23,34 @@ class OrdersScreen extends ConsumerWidget {
         showCart: false,
         showBack: true,
       ),
-      body: orders.isEmpty
-          ? Center(
-              child: Text(
-                'No orders yet',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textMuted,
+      body: ordersAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        error: (_, __) => Center(
+          child: Text(
+            'Could not load orders',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+          ),
+        ),
+        data: (orders) => orders.isEmpty
+            ? Center(
+                child: Text(
+                  'No orders yet',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textMuted,
+                  ),
                 ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(AppConstants.paddingM),
+                itemCount: orders.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppConstants.paddingM),
+                itemBuilder: (context, i) =>
+                    _OrderCard(order: orders[i], index: i),
               ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.all(AppConstants.paddingM),
-              itemCount: orders.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppConstants.paddingM),
-              itemBuilder: (context, i) =>
-                  _OrderCard(order: orders[i], index: i),
-            ),
+      ),
     );
   }
 }

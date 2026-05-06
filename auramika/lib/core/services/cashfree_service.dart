@@ -5,6 +5,7 @@ import '../constants/app_constants.dart';
 
 class PaymentSessionResult {
   final String orderId;
+  final String cashfreeOrderId;
   final String sessionId;
   final double total;
   final bool isTestMode;
@@ -12,6 +13,7 @@ class PaymentSessionResult {
 
   const PaymentSessionResult({
     required this.orderId,
+    required this.cashfreeOrderId,
     required this.sessionId,
     required this.total,
     required this.isTestMode,
@@ -79,13 +81,14 @@ class CashfreeService {
       rethrow;
     }
 
-    final orderId   = res.data['orderId'] as String;
-    final total     = (res.data['total'] as num).toDouble();
-    final isMock    = res.data['isMock'] as bool? ?? false;
-    final sessionId = res.data['paymentSessionId'] as String? ?? '';
-    final mode      = res.data['mode'] as String? ?? '?';
+    final orderId         = res.data['orderId'] as String;
+    final cashfreeOrderId = res.data['cashfreeOrderId'] as String? ?? '';
+    final total           = (res.data['total'] as num).toDouble();
+    final isMock          = res.data['isMock'] as bool? ?? false;
+    final sessionId       = res.data['paymentSessionId'] as String? ?? '';
+    final mode            = res.data['mode'] as String? ?? '?';
 
-    debugPrint('[CF] orderId=$orderId  total=$total  isMock=$isMock  mode=$mode');
+    debugPrint('[CF] orderId=$orderId  cfOrderId=$cashfreeOrderId  total=$total  isMock=$isMock  mode=$mode');
 
     if (!isMock && sessionId.isEmpty) {
       debugPrint('[CF] ❌ No payment session ID — aborting');
@@ -97,10 +100,23 @@ class CashfreeService {
 
     return PaymentSessionResult(
       orderId: orderId,
+      cashfreeOrderId: cashfreeOrderId,
       sessionId: sessionId,
       total: total,
       isTestMode: isTestMode,
       isMock: isMock,
     );
+  }
+
+  /// Calls the verify endpoint after Cashfree SDK returns success.
+  /// The backend confirms the order if Cashfree reports PAID — this is the
+  /// fallback for sandbox where webhooks may not fire.
+  Future<void> verifyAndConfirm(String cashfreeOrderId) async {
+    final token = await _getIdToken();
+    await _dio.get(
+      '${AppConstants.baseUrl}/api/v1/payments/verify/$cashfreeOrderId',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    debugPrint('[CF] verifyAndConfirm done for $cashfreeOrderId');
   }
 }

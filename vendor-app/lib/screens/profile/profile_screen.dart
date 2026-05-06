@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -9,12 +10,12 @@ import '../../providers/auth_provider.dart';
 import '../../providers/orders_provider.dart';
 import '../../providers/products_provider.dart';
 
-// Luxury palette — matches dashboard
-const _black     = Color(0xFF0A0A0A);
-const _gold      = Color(0xFFC9A84C);
-const _goldLight = Color(0xFFE8C97A);
-const _olive     = Color(0xFF6B7C3F);
-const _oliveDeep = Color(0xFF4A5E20);
+// Auramika Daily palette
+const _black     = Color(0xFF1A2F25);
+const _gold      = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF5E9A0);
+const _olive     = Color(0xFF1A2F25);
+const _oliveDeep = Color(0xFF1A2F25);
 
 class ProfileScreen extends HookConsumerWidget {
   const ProfileScreen({super.key});
@@ -24,18 +25,81 @@ class ProfileScreen extends HookConsumerWidget {
     final vendor        = ref.watch(authProvider).valueOrNull;
     final productsAsync = ref.watch(productsProvider);
     final ordersAsync   = ref.watch(ordersProvider);
-    final profileImage  = useState<File?>(null);
+    final profileImage      = useState<File?>(null);
+    final isUploadingLogo   = useState(false);
+    final bannerFile        = useState<File?>(null);
+    final isUploadingBanner = useState(false);
+
+    Future<void> pickAndUploadBanner() async {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked == null) return;
+      final file = File(picked.path);
+      bannerFile.value = file;
+      isUploadingBanner.value = true;
+      try {
+        await ref.read(authProvider.notifier).uploadBanner(file);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Banner updated successfully'),
+              backgroundColor: Color(0xFF2E7D32),
+            ),
+          );
+        }
+      } catch (e) {
+        bannerFile.value = null;
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: $e'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+      } finally {
+        isUploadingBanner.value = false;
+      }
+    }
 
     final productCount = productsAsync.valueOrNull?.length ?? 0;
-    final orderCount   = ordersAsync.valueOrNull?.length ?? 0;
+    final orderCount   = ordersAsync.valueOrNull
+            ?.where((o) => !['cancelled', 'refunded', 'payment_pending', 'payment_failed'].contains(o.status))
+            .length ?? 0;
     final activeOrders = ordersAsync.valueOrNull
-            ?.where((o) => ['paid', 'processing', 'shipped'].contains(o.status))
+            ?.where((o) => ['confirmed', 'paid', 'processing', 'shipped'].contains(o.status))
             .length ?? 0;
 
     Future<void> pickProfileImage() async {
       final picker = ImagePicker();
       final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked != null) profileImage.value = File(picked.path);
+      if (picked == null) return;
+      final file = File(picked.path);
+      profileImage.value = file;
+      isUploadingLogo.value = true;
+      try {
+        await ref.read(authProvider.notifier).uploadLogo(file);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile image updated'),
+              backgroundColor: Color(0xFF2E7D32),
+            ),
+          );
+        }
+      } catch (e) {
+        profileImage.value = null;
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: $e'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+      } finally {
+        isUploadingLogo.value = false;
+      }
     }
 
     return Scaffold(
@@ -53,7 +117,7 @@ class ProfileScreen extends HookConsumerWidget {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF060806), Color(0xFF0C1006), Color(0xFF121808)],
+                    colors: [Color(0xFF0C2214), Color(0xFF163520), Color(0xFF1A3E25)],
                     stops: [0.0, 0.55, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -118,15 +182,39 @@ class ProfileScreen extends HookConsumerWidget {
                   // Content
                   Padding(
                     padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + 24,
+                      top: MediaQuery.of(context).padding.top + 12,
                       bottom: 36,
                       left: 20,
                       right: 20,
                     ),
                     child: Column(children: [
+                      // Top nav row
+                      Row(children: [
+                        GestureDetector(
+                          onTap: () => context.go('/'),
+                          child: Container(
+                            width: 36, height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(14),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: _goldLight.withAlpha(80), width: 1),
+                            ),
+                            child: const Icon(Icons.arrow_back_ios_rounded, color: _goldLight, size: 16),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'PROFILE',
+                          style: TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.w700,
+                            color: _goldLight, letterSpacing: 3.0,
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: 16),
                       // Avatar
                       GestureDetector(
-                        onTap: pickProfileImage,
+                        onTap: isUploadingLogo.value ? null : pickProfileImage,
                         child: Stack(alignment: Alignment.bottomRight, children: [
                           Container(
                             width: 88, height: 88,
@@ -134,25 +222,51 @@ class ProfileScreen extends HookConsumerWidget {
                               color: _gold.withAlpha(22),
                               shape: BoxShape.circle,
                               border: Border.all(color: _gold.withAlpha(180), width: 2.5),
-                              image: profileImage.value != null
-                                  ? DecorationImage(
-                                      image: FileImage(profileImage.value!),
-                                      fit: BoxFit.cover)
-                                  : null,
                             ),
-                            child: profileImage.value == null
-                                ? const Icon(Icons.storefront_rounded, size: 40, color: _goldLight)
-                                : null,
-                          ),
-                          Container(
-                            width: 28, height: 28,
-                            decoration: BoxDecoration(
-                              color: _olive,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: _black, width: 2),
+                            child: ClipOval(
+                              child: isUploadingLogo.value
+                                  ? Container(
+                                      color: Colors.black45,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                            color: _goldLight, strokeWidth: 2),
+                                      ),
+                                    )
+                                  : profileImage.value != null
+                                      ? Image.file(profileImage.value!,
+                                          fit: BoxFit.cover, width: 88, height: 88)
+                                      : (vendor?.logoUrl != null && vendor!.logoUrl!.isNotEmpty)
+                                          ? CachedNetworkImage(
+                                              imageUrl: vendor.logoUrl!,
+                                              fit: BoxFit.cover,
+                                              width: 88,
+                                              height: 88,
+                                              placeholder: (_, __) => Container(
+                                                color: _gold.withAlpha(22),
+                                                child: const Center(
+                                                  child: CircularProgressIndicator(
+                                                      color: _goldLight, strokeWidth: 2),
+                                                ),
+                                              ),
+                                              errorWidget: (_, __, ___) => const Icon(
+                                                  Icons.storefront_rounded,
+                                                  size: 40,
+                                                  color: _goldLight),
+                                            )
+                                          : const Icon(Icons.storefront_rounded,
+                                              size: 40, color: _goldLight),
                             ),
-                            child: const Icon(Icons.camera_alt_rounded, size: 13, color: Colors.white),
                           ),
+                          if (!isUploadingLogo.value)
+                            Container(
+                              width: 28, height: 28,
+                              decoration: BoxDecoration(
+                                color: _olive,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: _black, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, size: 13, color: Colors.white),
+                            ),
                         ]),
                       ),
                       const SizedBox(height: 14),
@@ -249,6 +363,23 @@ class ProfileScreen extends HookConsumerWidget {
             ),
           ),
 
+          // ── Shop Banner ──────────────────────────────────────────────────
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 0),
+            sliver: SliverToBoxAdapter(child: _SectionLabel('Shop Banner')),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: _BannerCard(
+                networkUrl: vendor?.bannerUrl,
+                localFile: bannerFile.value,
+                isUploading: isUploadingBanner.value,
+                onTap: pickAndUploadBanner,
+              ),
+            ),
+          ),
+
           // ── Shop Info ────────────────────────────────────────────────────
           const SliverPadding(
             padding: EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -326,15 +457,6 @@ class ProfileScreen extends HookConsumerWidget {
                   labelColor: AppTheme.error,
                   onTap: () => _confirmSignOut(context, ref),
                 ),
-                const _Divider(),
-                _ActionTile(
-                  icon: Icons.delete_forever_rounded,
-                  iconColor: AppTheme.error,
-                  label: 'Delete Account',
-                  labelColor: AppTheme.error,
-                  subtitle: 'Permanently remove your vendor account',
-                  onTap: () => _confirmDeleteAccount(context, ref),
-                ),
               ]),
             ),
           ),
@@ -401,88 +523,155 @@ class ProfileScreen extends HookConsumerWidget {
     );
   }
 
-  void _confirmDeleteAccount(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 48),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_gold, _goldLight]),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+class _BannerCard extends StatelessWidget {
+  final String? networkUrl;
+  final File? localFile;
+  final bool isUploading;
+  final VoidCallback onTap;
+
+  const _BannerCard({
+    required this.networkUrl,
+    required this.localFile,
+    required this.isUploading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = localFile != null || (networkUrl != null && networkUrl!.isNotEmpty);
+
+    return GestureDetector(
+      onTap: isUploading ? null : onTap,
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: _black.withAlpha(20),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasImage ? _gold.withAlpha(65) : _gold.withAlpha(45),
+            width: hasImage ? 1 : 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.error.withAlpha(18), shape: BoxShape.circle),
-            child: const Icon(Icons.delete_forever_rounded, color: AppTheme.error, size: 28),
-          ),
-          const SizedBox(height: 16),
-          const Text('Delete Account?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _black)),
-          const SizedBox(height: 8),
-          const Text(
-            'This will permanently remove your vendor account, all products, and order history. This action cannot be undone.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.5),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.warning.withAlpha(18),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.warning.withAlpha(60)),
-            ),
-            child: Row(children: [
-              Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 16),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Contact Auramika admin to complete account deletion.',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
+          boxShadow: [
+            BoxShadow(color: _gold.withAlpha(16), blurRadius: 12, offset: const Offset(0, 3)),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Banner image (local file takes priority over network)
+            if (localFile != null)
+              Image.file(localFile!, fit: BoxFit.cover)
+            else if (networkUrl != null && networkUrl!.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: networkUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: _black.withAlpha(40),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: _goldLight, strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => _EmptyBannerPlaceholder(onTap: onTap),
+              )
+            else
+              _EmptyBannerPlaceholder(onTap: onTap),
+
+            // Uploading overlay
+            if (isUploading)
+              Container(
+                color: Colors.black.withAlpha(120),
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: _goldLight, strokeWidth: 2),
+                      SizedBox(height: 10),
+                      Text(
+                        'Uploading banner...',
+                        style: TextStyle(color: _goldLight, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ]),
-          ),
-          const SizedBox(height: 24),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+
+            // Edit badge (shown when image is set and not uploading)
+            if (hasImage && !isUploading)
+              Positioned(
+                bottom: 10,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _black.withAlpha(180),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _gold.withAlpha(120), width: 1),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit_rounded, size: 11, color: _goldLight),
+                      SizedBox(width: 4),
+                      Text(
+                        'Change Banner',
+                        style: TextStyle(fontSize: 10, color: _goldLight, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.error, foregroundColor: Colors.white),
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref.read(authProvider.notifier).logout();
-                },
-                child: const Text('Delete & Sign Out'),
-              ),
-            ),
-          ]),
-        ]),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+class _EmptyBannerPlaceholder extends StatelessWidget {
+  final VoidCallback onTap;
+  const _EmptyBannerPlaceholder({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [const Color(0xFF0C2214).withAlpha(60), const Color(0xFF163520).withAlpha(60)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _gold.withAlpha(20),
+            shape: BoxShape.circle,
+            border: Border.all(color: _gold.withAlpha(80), width: 1),
+          ),
+          child: const Icon(Icons.add_photo_alternate_outlined, color: _goldLight, size: 26),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Add Shop Banner',
+          style: TextStyle(color: _goldLight, fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Shown to customers on the Auramika app',
+          style: TextStyle(color: _goldLight.withAlpha(160), fontSize: 10),
+        ),
+      ],
+    ),
+  );
+}
 
 class _StatPill extends StatelessWidget {
   final String label;

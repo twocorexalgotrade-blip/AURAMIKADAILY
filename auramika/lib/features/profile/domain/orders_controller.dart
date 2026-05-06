@@ -33,14 +33,69 @@ class OrderModel {
         status: status ?? this.status,
         itemCount: itemCount,
       );
+
+  static OrderStatus _parseStatus(String s) => switch (s) {
+        'shipped'                   => OrderStatus.inTransit,
+        'delivered'                 => OrderStatus.delivered,
+        'cancelled' || 'refunded'   => OrderStatus.cancelled,
+        _                           => OrderStatus.processing,
+      };
+
+  static String _formatDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  factory OrderModel.fromBackend(Map<String, dynamic> json) {
+    final items = (json['items'] as List? ?? []).cast<Map<String, dynamic>>();
+    final first = items.isNotEmpty ? items.first : null;
+    final name = first == null
+        ? 'Order'
+        : items.length > 1
+            ? '${first['product_name']} & ${items.length - 1} more'
+            : (first['product_name'] as String? ?? 'Order');
+    final count = items.fold<int>(0, (s, i) => s + ((i['quantity'] as int?) ?? 1));
+    return OrderModel(
+      id: json['id'] as String,
+      productName: name,
+      imageAsset: first?['image_url'] as String?,
+      total: (json['total'] as num).toDouble(),
+      date: _formatDate(json['created_at'] as String? ?? ''),
+      status: _parseStatus(json['status'] as String? ?? ''),
+      itemCount: count,
+    );
+  }
 }
 
-class OrdersNotifier extends Notifier<List<OrderModel>> {
+class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
   @override
-  List<OrderModel> build() => _initialOrders;
+  Future<List<OrderModel>> build() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return _demoOrders;
+
+    try {
+      final token = await user.getIdToken();
+      final dio = Dio(BaseOptions(baseUrl: '${AppConstants.baseUrl}/api/v1'));
+      final res = await dio.get<Map<String, dynamic>>(
+        '/orders',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final raw = (res.data!['orders'] as List).cast<Map<String, dynamic>>();
+      final orders = raw.map(OrderModel.fromBackend).toList();
+      return orders.isEmpty ? _demoOrders : orders;
+    } catch (_) {
+      return _demoOrders;
+    }
+  }
 
   void addOrder(OrderModel order) {
-    state = [order, ...state];
+    final current = state.valueOrNull ?? [];
+    state = AsyncData([order, ...current]);
   }
 
   Future<void> cancelOrder(String id) async {
@@ -57,18 +112,19 @@ class OrdersNotifier extends Notifier<List<OrderModel>> {
     } catch (_) {
       // Demo orders (ORD-*) 404 on the backend — still update local state
     }
-    state = [
-      for (final o in state)
+    final current = state.valueOrNull ?? [];
+    state = AsyncData([
+      for (final o in current)
         if (o.id == id) o.copyWith(status: OrderStatus.cancelled) else o,
-    ];
+    ]);
   }
 }
 
 final ordersProvider =
-    NotifierProvider<OrdersNotifier, List<OrderModel>>(OrdersNotifier.new);
+    AsyncNotifierProvider<OrdersNotifier, List<OrderModel>>(OrdersNotifier.new);
 
-// Pre-existing demo orders shown before user places any real order
-const _initialOrders = [
+// Shown when user is not logged in or has placed no real orders yet
+const _demoOrders = [
   OrderModel(
     id: 'ORD-2025-004',
     productName: 'Gold Link Bracelet',

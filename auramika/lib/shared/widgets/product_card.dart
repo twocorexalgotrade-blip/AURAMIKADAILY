@@ -27,6 +27,7 @@ class ProductCard extends ConsumerStatefulWidget {
   final String material; // 'Brass' | 'Copper'
   final bool isExpressAvailable;
   final bool isWishlisted; // kept for API compat; provider is source of truth
+  final bool inStock;
   final VoidCallback? onTap;
   final VoidCallback? onWishlistTap;
   final int animationIndex;
@@ -41,6 +42,7 @@ class ProductCard extends ConsumerStatefulWidget {
     this.material = 'Brass',
     this.isExpressAvailable = true,
     this.isWishlisted = false,
+    this.inStock = true,
     this.onTap,
     this.onWishlistTap,
     this.animationIndex = 0,
@@ -59,12 +61,12 @@ class _ProductCardState extends ConsumerState<ProductCard>
     final isWishlisted = ref.watch(wishlistProvider).contains(widget.id);
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
+      onTapDown: widget.inStock ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: widget.inStock ? (_) {
         setState(() => _pressed = false);
         widget.onTap?.call();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
+      } : null,
+      onTapCancel: widget.inStock ? () => setState(() => _pressed = false) : null,
       child: AnimatedScale(
         scale: _pressed ? 0.97 : 1.0,
         duration: AppConstants.animFast,
@@ -83,7 +85,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
   }
 
   Widget _buildCard(bool isWishlisted) {
-    return Container(
+    return Opacity(
+      opacity: widget.inStock ? 1.0 : 0.65,
+      child: Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusS),
@@ -99,6 +103,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
               imageUrl: widget.imageUrl,
               material: widget.material,
               isExpressAvailable: widget.isExpressAvailable,
+              inStock: widget.inStock,
               isWishlisted: isWishlisted,
               onWishlistTap: () {
                 ref.read(wishlistProvider.notifier).toggle(WishlistItem(
@@ -173,6 +178,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -196,6 +202,7 @@ class _ProductImage extends StatelessWidget {
   final String? imageUrl;
   final String material;
   final bool isExpressAvailable;
+  final bool inStock;
   final bool isWishlisted;
   final VoidCallback onWishlistTap;
 
@@ -203,6 +210,7 @@ class _ProductImage extends StatelessWidget {
     required this.imageUrl,
     required this.material,
     required this.isExpressAvailable,
+    required this.inStock,
     required this.isWishlisted,
     required this.onWishlistTap,
   });
@@ -269,6 +277,28 @@ class _ProductImage extends StatelessWidget {
               onTap: onWishlistTap,
             ),
           ),
+
+          // ── Out of stock banner ────────────────────────────────────────
+          if (!inStock)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                color: Colors.black.withValues(alpha: 0.55),
+                child: Text(
+                  'OUT OF STOCK',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ),
         ],
     );
   }

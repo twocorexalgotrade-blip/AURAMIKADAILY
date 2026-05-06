@@ -64,6 +64,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _cashfreeService = CashfreeService();
   // Holds snapshot data while Cashfree SDK is active
   String? _pendingOrderId;
+  String? _pendingCashfreeOrderId;
   String? _pendingProductName;
   double? _pendingTotal;
   int?    _pendingItemCount;
@@ -234,7 +235,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   bool _validateAddress() {
     final missing = <String>[];
     if (_nameCtrl.text.trim().isEmpty)  missing.add('Full Name');
-    if (_phoneCtrl.text.trim().isEmpty) missing.add('Phone');
+    if (_phoneCtrl.text.trim().length < 10) missing.add('Phone (10 digits)');
     if (_line1Ctrl.text.trim().isEmpty) missing.add('Address');
     if (_cityCtrl.text.trim().isEmpty)  missing.add('City');
     if (_pinCtrl.text.trim().length != 6) missing.add('PIN Code');
@@ -303,8 +304,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         debugPrint('[Checkout] ✅ session: orderId=${result.orderId}  total=${result.total}  isMock=${result.isMock}  isTestMode=${result.isTestMode}');
 
         // Snapshot for SDK callbacks; total from backend is the source of truth.
-        _pendingOrderId     = result.orderId;
-        _pendingProductName = productName;
+        _pendingOrderId         = result.orderId;
+        _pendingCashfreeOrderId = result.cashfreeOrderId;
+        _pendingProductName     = productName;
         _pendingTotal       = result.total;
         _pendingItemCount   = cart.totalItems;
         _pendingImageAsset  = firstItem?.imageUrl;
@@ -318,9 +320,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           return;
         }
 
-        // Force SANDBOX — test mode is on until go-live.
-        const cfEnv = CFEnvironment.SANDBOX;
-        debugPrint('[Checkout] 🚀 launching CFWebCheckout  env=SANDBOX  sessionId=${result.sessionId.substring(0, result.sessionId.length.clamp(0, 40))}');
+        final cfEnv = result.isTestMode ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION;
+        debugPrint('[Checkout] 🚀 launching CFWebCheckout  env=${result.isTestMode ? "SANDBOX" : "PRODUCTION"}  sessionId=${result.sessionId.substring(0, result.sessionId.length.clamp(0, 40))}');
 
         final session = CFSessionBuilder()
             .setEnvironment(cfEnv)
@@ -413,8 +414,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   // ── Cashfree SDK callbacks ────────────────────────────────────────────────
 
   void _onPaymentVerify(String orderId) {
-    debugPrint('[Checkout] 🎉 _onPaymentVerify called  orderId=$orderId  pending=$_pendingOrderId');
+    debugPrint('[Checkout] 🎉 _onPaymentVerify called  orderId=$orderId  cfOrderId=$_pendingCashfreeOrderId');
     _hideLaunchOverlay();
+    // Use the Cashfree order ID (AURxxx) stored before SDK launch — the orderId
+    // param here is the internal UUID set via .setOrderId(), not the CF order.
+    final cfOrderId = _pendingCashfreeOrderId;
+    if (cfOrderId != null && cfOrderId.isNotEmpty) {
+      _cashfreeService.verifyAndConfirm(cfOrderId).catchError((e) {
+        debugPrint('[Checkout] verifyAndConfirm error (non-fatal): $e');
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _paying = false);
@@ -430,24 +439,48 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   String _friendlyPaymentError(Object e) {
-    final raw = e.toString().toLowerCase();
-    if (raw.contains('sign in') || raw.contains('auth')) {
+    // Prefer the backend's own error message over the generic DioException text.
+    String? backendMsg;
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map) {
+        backendMsg = (data['error'] ?? data['message'])?.toString();
+      }
+      debugPrint('[Checkout] payment error  status=${e.response?.statusCode}  backend=$backendMsg  raw=${e.message}');
+    } else {
+      debugPrint('[Checkout] payment error  $e');
+    }
+
+    final raw = (backendMsg ?? e.toString()).toLowerCase();
+
+    if (raw.contains('sign in') || raw.contains('unauthenticated')) {
       return 'Please sign in and try again.';
     }
-    if (raw.contains('socket') || raw.contains('connection') ||
-        raw.contains('network') || raw.contains('no-server') ||
-        raw.contains('404') || raw.contains('not found')) {
-      return 'Could not reach the payment server. Please check your connection and try again.';
+    if (raw.contains('unauthorized') || raw.contains('forbidden') ||
+        raw.contains('401') || raw.contains('403')) {
+      return 'Session expired. Please sign out and sign in again.';
     }
-    if (raw.contains('cashfree')) {
-      return 'Payment gateway error. Please check your Cashfree credentials and try again.';
+    if (raw.contains('out of stock')) {
+      return 'One or more items in your cart are out of stock.';
+    }
+    if (raw.contains('product not found')) {
+      return 'A product in your cart is no longer available.';
+    }
+    if (raw.contains('socket') || raw.contains('connection') ||
+        raw.contains('network') || raw.contains('not found') ||
+        raw.contains('404')) {
+      return 'Could not reach the payment server. Check your connection and try again.';
+    }
+    if (raw.contains('cashfree') || raw.contains('payment_session')) {
+      return 'Payment gateway error. Please try again.';
     }
     if (raw.contains('500') || raw.contains('502') || raw.contains('server error')) {
       return 'Payment server error. Please try again in a moment.';
     }
-    if (raw.contains('session') || raw.contains('session id')) {
+    if (raw.contains('session')) {
       return 'Could not start payment session. Please try again.';
     }
+    if (backendMsg != null) return backendMsg;
     return 'Payment could not be processed. Please try again.';
   }
 
@@ -811,6 +844,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const SizedBox(height: AppConstants.paddingM),
                   _DeliveryToggle(
                     isExpress: _isExpress,
+                    expressAvailable: cart.isAllExpress,
                     onChanged: (v) => setState(() => _isExpress = v),
                   ),
 
@@ -1127,34 +1161,58 @@ class _CheckoutField extends StatelessWidget {
 // ── Delivery Toggle ───────────────────────────────────────────────────────────
 class _DeliveryToggle extends StatelessWidget {
   final bool isExpress;
+  final bool expressAvailable;
   final ValueChanged<bool> onChanged;
-  const _DeliveryToggle({required this.isExpress, required this.onChanged});
+  const _DeliveryToggle({
+    required this.isExpress,
+    required this.expressAvailable,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _DeliveryOption(
-            label: 'EXPRESS',
-            sublabel: 'Get it in 2 Hours · FREE',
-            icon: Icons.bolt,
-            iconColor: AppColors.gold,
-            isSelected: isExpress,
-            onTap: () => onChanged(true),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _DeliveryOption(
+                label: 'EXPRESS',
+                sublabel: expressAvailable
+                    ? 'Get it in 2 Hours · FREE'
+                    : 'Not available for this cart',
+                icon: Icons.bolt,
+                iconColor: expressAvailable ? AppColors.gold : AppColors.textMuted,
+                isSelected: isExpress && expressAvailable,
+                isDisabled: !expressAvailable,
+                onTap: expressAvailable ? () => onChanged(true) : null,
+              ),
+            ),
+            const SizedBox(width: AppConstants.paddingS),
+            Expanded(
+              child: _DeliveryOption(
+                label: 'STANDARD',
+                sublabel: '2-3 Days · ₹49',
+                icon: Icons.local_shipping_outlined,
+                iconColor: AppColors.textMuted,
+                isSelected: !isExpress || !expressAvailable,
+                onTap: () => onChanged(false),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: AppConstants.paddingS),
-        Expanded(
-          child: _DeliveryOption(
-            label: 'STANDARD',
-            sublabel: '2-3 Days · ₹49',
-            icon: Icons.local_shipping_outlined,
-            iconColor: AppColors.textMuted,
-            isSelected: !isExpress,
-            onTap: () => onChanged(false),
-          ),
-        ),
+        if (!expressAvailable) ...[
+          const SizedBox(height: 6),
+          Row(children: [
+            const Icon(Icons.info_outline_rounded, size: 12, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text(
+              'Add only express-eligible items for 2-hr delivery',
+              style: AppTextStyles.bodySmall.copyWith(fontSize: 10, color: AppColors.textMuted),
+            ),
+          ]),
+        ],
       ],
     );
   }
@@ -1166,11 +1224,13 @@ class _DeliveryOption extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
   final bool isSelected;
-  final VoidCallback onTap;
+  final bool isDisabled;
+  final VoidCallback? onTap;
 
   const _DeliveryOption({
     required this.label, required this.sublabel, required this.icon,
-    required this.iconColor, required this.isSelected, required this.onTap,
+    required this.iconColor, required this.isSelected,
+    this.isDisabled = false, this.onTap,
   });
 
   @override
@@ -1183,10 +1243,10 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.isDisabled ? null : widget.onTap,
+      onTapDown: widget.isDisabled ? null : (_) => setState(() => _pressed = true),
+      onTapUp: widget.isDisabled ? null : (_) => setState(() => _pressed = false),
+      onTapCancel: widget.isDisabled ? null : () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.96 : 1.0,
         duration: const Duration(milliseconds: 100),
@@ -1195,13 +1255,19 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
           duration: AppConstants.animFast,
           padding: const EdgeInsets.all(AppConstants.paddingM),
           decoration: BoxDecoration(
-            color: widget.isSelected
-                ? AppColors.forestGreen.withValues(alpha: 0.06)
-                : AppColors.surface,
+            color: widget.isDisabled
+                ? AppColors.surface.withValues(alpha: 0.5)
+                : widget.isSelected
+                    ? AppColors.forestGreen.withValues(alpha: 0.06)
+                    : AppColors.surface,
             borderRadius: BorderRadius.circular(AppConstants.radiusS),
             border: Border.all(
-              color: widget.isSelected ? AppColors.forestGreen : AppColors.divider,
-              width: widget.isSelected ? 1.5 : 0.8,
+              color: widget.isDisabled
+                  ? AppColors.divider.withValues(alpha: 0.5)
+                  : widget.isSelected
+                      ? AppColors.forestGreen
+                      : AppColors.divider,
+              width: widget.isSelected && !widget.isDisabled ? 1.5 : 0.8,
             ),
           ),
           child: Column(
@@ -1210,9 +1276,11 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
               Icon(
                 widget.icon,
                 size: 18,
-                color: widget.isSelected
-                    ? AppColors.forestGreen
-                    : widget.iconColor,
+                color: widget.isDisabled
+                    ? AppColors.textMuted.withValues(alpha: 0.4)
+                    : widget.isSelected
+                        ? AppColors.forestGreen
+                        : widget.iconColor,
               ),
               const SizedBox(height: 6),
               Text(
@@ -1220,9 +1288,11 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
                 style: AppTextStyles.categoryChip.copyWith(
                   fontSize: 10,
                   letterSpacing: 1.5,
-                  color: widget.isSelected
-                      ? AppColors.forestGreen
-                      : AppColors.textPrimary,
+                  color: widget.isDisabled
+                      ? AppColors.textMuted.withValues(alpha: 0.5)
+                      : widget.isSelected
+                          ? AppColors.forestGreen
+                          : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 2),
@@ -1230,7 +1300,8 @@ class _DeliveryOptionState extends State<_DeliveryOption> {
                 widget.sublabel,
                 style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 9,
-                  color: AppColors.textMuted,
+                  color: AppColors.textMuted.withValues(
+                      alpha: widget.isDisabled ? 0.5 : 1.0),
                 ),
               ),
             ],
@@ -1691,7 +1762,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
               const SizedBox(height: AppConstants.paddingM),
 
               GestureDetector(
-                onTap: () => context.go(AppRoutes.profile),
+                onTap: () => context.go(AppRoutes.orders),
                 child: Container(
                   height: 44,
                   decoration: BoxDecoration(

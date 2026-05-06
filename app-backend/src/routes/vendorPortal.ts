@@ -293,6 +293,25 @@ router.put('/orders/:orderId/status', requireVendorAuth, async (req: VendorReque
   res.json(result.rows[0]);
 });
 
+// ── GET /vendor/stock-demand ───────────────────────────────────────────────
+// Returns out-of-stock products owned by this vendor with how many users
+// have registered a "notify me" reminder for each.
+router.get('/stock-demand', requireVendorAuth, async (req: VendorRequest, res: Response) => {
+  const result = await pool.query(
+    `SELECT p.id, p.product_name, p.price,
+            COALESCE(p.image_urls[1], '') AS image_url,
+            COUNT(sr.user_uid)::int        AS demand_count
+     FROM products p
+     LEFT JOIN stock_reminders sr ON sr.product_id = p.id
+     WHERE p.vendor_id = $1
+       AND p.in_stock  = false
+     GROUP BY p.id
+     ORDER BY demand_count DESC, p.updated_at DESC`,
+    [req.vendorId],
+  );
+  res.json({ items: result.rows });
+});
+
 // ── POST /vendor/images/presign ────────────────────────────────────────────
 router.post('/images/presign', requireVendorAuth, async (req: VendorRequest, res: Response) => {
   if (!env.aws.s3Bucket) throw new AppError(500, 'S3 not configured');

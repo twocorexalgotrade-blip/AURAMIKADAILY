@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/constants.dart';
@@ -53,5 +54,51 @@ class AuthNotifier extends AsyncNotifier<Vendor?> {
     final storage = ref.read(secureStorageProvider);
     await storage.delete(key: AppConstants.tokenKey);
     state = const AsyncData(null);
+  }
+
+  Future<void> uploadLogo(File file) async {
+    final api = ref.read(apiClientProvider);
+    final bytes = await file.readAsBytes();
+    final ext = file.path.split('.').last.toLowerCase();
+    final contentType = ext == 'png' ? 'image/png' : 'image/jpeg';
+    final filename = 'logo_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+    final presignRes = await api.post<Map<String, dynamic>>(
+      '/vendor/images/presign',
+      data: {'filename': filename, 'contentType': contentType},
+    );
+    final uploadUrl = presignRes.data!['uploadUrl'] as String;
+    final publicUrl = presignRes.data!['publicUrl'] as String;
+
+    await api.putToS3(uploadUrl, bytes, contentType);
+    await api.put<void>('/vendor/me/logo', data: {'logo_url': publicUrl});
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(logoUrl: publicUrl));
+    }
+  }
+
+  Future<void> uploadBanner(File file) async {
+    final api = ref.read(apiClientProvider);
+    final bytes = await file.readAsBytes();
+    final ext = file.path.split('.').last.toLowerCase();
+    final contentType = ext == 'png' ? 'image/png' : 'image/jpeg';
+    final filename = 'banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+    final presignRes = await api.post<Map<String, dynamic>>(
+      '/vendor/images/presign',
+      data: {'filename': filename, 'contentType': contentType},
+    );
+    final uploadUrl = presignRes.data!['uploadUrl'] as String;
+    final publicUrl = presignRes.data!['publicUrl'] as String;
+
+    await api.putToS3(uploadUrl, bytes, contentType);
+    await api.put<void>('/vendor/me/banner', data: {'banner_url': publicUrl});
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(bannerUrl: publicUrl));
+    }
   }
 }

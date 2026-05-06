@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -7,10 +8,13 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/widgets/auramika_app_bar.dart';
 import '../../../../shared/widgets/product_card.dart';
 import '../../domain/home_models.dart';
+import '../../domain/home_provider.dart';
 import '../widgets/home_hero_section.dart';
 import '../widgets/trending_edit_section.dart';
 import '../widgets/vibe_grid_section.dart';
 import '../../../custom_order/presentation/screens/custom_order_screen.dart';
+import '../../../shop/domain/shop_models.dart';
+import '../../../shop/presentation/screens/shops_screen.dart';
 
 /// AURAMIKA Home Screen — Phase 3
 ///
@@ -21,14 +25,14 @@ import '../../../custom_order/presentation/screens/custom_order_screen.dart';
 ///   4. TrendingEditSection — "The Weekend Edit" horizontal scroll
 ///   5. Mixed Brass+Copper product grid (all vibes)
 ///   6. Bottom padding (behind floating nav)
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _appBarSolid = false;
   Color _heroBgColor = AppColors.forestGreen; // initial slide is dark
@@ -72,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final products = HomeData.allProducts;
+    final products = ref.watch(homeProductsProvider).valueOrNull ?? HomeData.allProducts;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -248,7 +252,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // ── 6. Mixed Products header ─────────────────────────────────────
+          // ── 6. Shop by Store ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _ShopByStoreSection(
+              onSeeAll: () => context.go('/shop'),
+            ),
+          ),
+
+          // ── 7. Mixed Products header ─────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -327,11 +338,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     material: p.material,
                     imageUrl: p.imageUrl,
                     isExpressAvailable: p.isExpressAvailable,
+                    inStock: p.inStock,
                     animationIndex: i,
-                    onTap: () {
-                      // Navigate to PDP — uses nested route under home branch
-                      context.push('/product/${p.id}');
-                    },
+                    onTap: p.inStock ? () => context.push('/product/${p.id}') : null,
                   );
                 },
                 childCount: products.length,
@@ -380,6 +389,96 @@ class _MaterialDot extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(fontSize: 9),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Shop by Store Section ─────────────────────────────────────────────────────
+class _ShopByStoreSection extends StatelessWidget {
+  final VoidCallback onSeeAll;
+  const _ShopByStoreSection({required this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final shops = ShopData.allShops;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.paddingM,
+            AppConstants.paddingXL,
+            AppConstants.paddingM,
+            AppConstants.paddingM,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'SHOP BY STORE',
+                    style: AppTextStyles.categoryChip.copyWith(
+                      fontSize: 11,
+                      letterSpacing: 3.5,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Browse curated boutiques',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: onSeeAll,
+                behavior: HitTestBehavior.opaque,
+                child: Text(
+                  'SEE ALL',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.gold,
+                    fontSize: 10,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Horizontal shop cards
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.paddingM),
+            itemCount: shops.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(width: AppConstants.paddingS + 2),
+            itemBuilder: (context, i) {
+              final shop = shops[i];
+              return MiniShopCard(
+                shop: shop,
+                onTap: () => context.push('/shop/${shop.id}'),
+              )
+                  .animate()
+                  .fadeIn(
+                    delay: Duration(milliseconds: i * 60),
+                    duration: AppConstants.animNormal,
+                  )
+                  .slideX(begin: 0.06, end: 0, curve: Curves.easeOut);
+            },
+          ),
         ),
       ],
     );

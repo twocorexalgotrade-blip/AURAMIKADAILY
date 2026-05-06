@@ -434,7 +434,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           InkWell(
             onTap: () {
               setState(() => _ageConfirmed = !_ageConfirmed);
-              field.didChange(!_ageConfirmed);
+              field.didChange(_ageConfirmed);
             },
             borderRadius: BorderRadius.circular(AppConstants.radiusS),
             child: Row(

@@ -3,18 +3,18 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_provider.dart';
 
-// Palette: olive green luxury · golden · black · white
-const _black      = Color(0xFF0A0A0A);
-const _darkCard   = Color(0xFF141414);
-const _gold       = Color(0xFFC9A84C);
-const _goldLight  = Color(0xFFE8C97A);
-const _goldPale   = Color(0xFFF5E6BB);
-const _olive      = Color(0xFF6B7C3F);
-const _oliveDeep  = Color(0xFF4A5E20);
+// Auramika Daily palette
+const _black      = Color(0xFF1A2F25);
+const _darkCard   = Color(0xFF0F1F18);
+const _gold       = Color(0xFFD4AF37);
+const _goldLight  = Color(0xFFF5E9A0);
+const _goldPale   = Color(0xFFF5E9A0);
+const _olive      = Color(0xFF1A2F25);
+const _oliveDeep  = Color(0xFF1A2F25);
 const _white      = Color(0xFFFFFFFF);
-const _offWhite   = Color(0xFFFDFAF5);
-const _textDark   = Color(0xFF0A0A0A);
-const _textMuted  = Color(0xFF6B7C70);
+const _offWhite   = Color(0xFFFAFAF5);
+const _textDark   = Color(0xFF1A2F25);
+const _textMuted  = Color(0xFF8A8A8A);
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -33,7 +33,7 @@ class LoginScreen extends HookConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: const Color(0xFFC0392B),
+            backgroundColor: const Color(0xFFB00020),
           ),
         );
       }

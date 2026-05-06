@@ -114,8 +114,9 @@ class StyleVibeScreen extends StatelessWidget {
                       material: p.material,
                       imageUrl: p.imageUrl,
                       isExpressAvailable: p.isExpressAvailable,
+                      inStock: p.inStock,
                       animationIndex: index,
-                      onTap: () => context.push('/product/${p.id}'),
+                      onTap: p.inStock ? () => context.push('/product/${p.id}') : null,
                     );
                   },
                   childCount: products.length,

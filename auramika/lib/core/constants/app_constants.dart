@@ -34,7 +34,6 @@ abstract class AppConstants {
   static const String urlFaqs             = 'https://auramikadaily.com/faqs';
 
   // ── Cashfree ──────────────────────────────────────────────────────────────
-  // Set to true to force Cashfree sandbox (test) mode regardless of backend.
   static const bool cashfreeTestMode = true;
 
   // ── API ───────────────────────────────────────────────────────────────────

@@ -56,47 +56,53 @@ class AppShell extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 4,
-        indicatorColor: const Color(0xFFC9A84C).withAlpha(30),
-        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: states.contains(WidgetState.selected)
-              ? const Color(0xFFC9A84C)
-              : const Color(0xFF7A7560),
-        )),
-        selectedIndex: index,
-        onDestinationSelected: (i) {
-          if (i == 0) context.go('/');
-          if (i == 1) context.go('/products');
-          if (i == 2) context.go('/orders');
-          if (i == 3) context.go('/profile');
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined, color: Color(0xFF7A7560)),
-            selectedIcon: Icon(Icons.grid_view, color: Color(0xFFC9A84C)),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined, color: Color(0xFF7A7560)),
-            selectedIcon: Icon(Icons.inventory_2, color: Color(0xFFC9A84C)),
-            label: 'Products',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF7A7560)),
-            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFFC9A84C)),
-            label: 'Orders',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded, color: Color(0xFF7A7560)),
-            selectedIcon: Icon(Icons.person_rounded, color: Color(0xFFC9A84C)),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFFAFAF5),
+          border: Border(top: BorderSide(color: Color(0xFFD4AF37), width: 0.8)),
+        ),
+        child: NavigationBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          indicatorColor: const Color(0xFF1A2F25).withAlpha(18),
+          labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: states.contains(WidgetState.selected)
+                ? const Color(0xFF1A2F25)
+                : const Color(0xFF8A8A8A),
+          )),
+          selectedIndex: index,
+          onDestinationSelected: (i) {
+            if (i == 0) context.go('/');
+            if (i == 1) context.go('/products');
+            if (i == 2) context.go('/orders');
+            if (i == 3) context.go('/profile');
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.grid_view_outlined, color: Color(0xFF8A8A8A)),
+              selectedIcon: Icon(Icons.grid_view, color: Color(0xFF1A2F25)),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.inventory_2_outlined, color: Color(0xFF8A8A8A)),
+              selectedIcon: Icon(Icons.inventory_2, color: Color(0xFF1A2F25)),
+              label: 'Products',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF8A8A8A)),
+              selectedIcon: Icon(Icons.receipt_long, color: Color(0xFF1A2F25)),
+              label: 'Orders',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded, color: Color(0xFF8A8A8A)),
+              selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF1A2F25)),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

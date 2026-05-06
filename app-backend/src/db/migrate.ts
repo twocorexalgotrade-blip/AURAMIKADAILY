@@ -139,6 +139,13 @@ export async function runMigrations() {
       requests  INT  NOT NULL DEFAULT 0,
       PRIMARY KEY (user_uid, day)
     );
+
+    CREATE TABLE IF NOT EXISTS stock_reminders (
+      user_uid   TEXT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+      product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (user_uid, product_id)
+    );
   `);
 
   // Idempotent column additions for tables that may predate schema changes
@@ -157,7 +164,8 @@ export async function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_addresses_user_uid       ON addresses(user_uid);
     CREATE INDEX IF NOT EXISTS idx_products_category        ON products(category);
     CREATE INDEX IF NOT EXISTS idx_products_vibe            ON products(vibe);
-    CREATE INDEX IF NOT EXISTS idx_products_in_stock        ON products(in_stock, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_products_in_stock          ON products(in_stock, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_stock_reminders_product_id ON stock_reminders(product_id);
   `);
 
 

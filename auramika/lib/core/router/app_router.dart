@@ -22,6 +22,7 @@ import '../../features/profile/presentation/screens/terms_of_service_screen.dart
 import '../../features/profile/presentation/screens/transactions_screen.dart';
 import '../../features/profile/presentation/screens/wishlist_screen.dart';
 import '../../features/stylist/presentation/screens/stylist_screen.dart';
+import '../../features/shop/presentation/screens/shops_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_screen.dart';
 import '../../shared/widgets/main_wrapper.dart';
 
@@ -49,6 +50,7 @@ class AppRoutes {
   static const orderConfirmation = '/order-confirmation';
 
   static String product(String id) => '/product/$id';
+  static String shopVendor(String id) => '/shop/$id';
 }
 
 // ── Router provider ───────────────────────────────────────────────────────────
@@ -92,12 +94,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Branch 3 — Shop (Vendor)
+          // Branch 3 — Shop (multi-shop browser → individual vendor)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.shop,
-                builder: (context, state) => const VendorScreen(),
+                builder: (context, state) => const ShopsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id'] ?? '';
+                      return VendorScreen(vendorId: id);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
