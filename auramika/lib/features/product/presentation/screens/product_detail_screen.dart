@@ -12,6 +12,7 @@ import '../../../cart/domain/cart_model.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../profile/domain/wishlist_controller.dart';
 import '../../domain/product_model.dart';
+import '../../domain/reminder_provider.dart';
 import '../widgets/pdp_image_gallery.dart';
 
 /// AURAMIKA Product Detail Page — Phase 5
@@ -211,6 +212,35 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ),
               ),
             ],
+          ),
+
+          // ── Persistent back button (always visible regardless of scroll) ─
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: AppConstants.paddingS,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).maybePop(),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
           ),
 
           // ── Sticky Add to Cart bar ──────────────────────────────────────
@@ -758,7 +788,7 @@ class _WearItWithSection extends StatelessWidget {
 }
 
 // ── Sticky Add to Cart Bar ────────────────────────────────────────────────────
-class _StickyCartBar extends StatelessWidget {
+class _StickyCartBar extends ConsumerStatefulWidget {
   final ProductDetail product;
   final VoidCallback onAddToCart;
   final bool loading;
@@ -770,8 +800,30 @@ class _StickyCartBar extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_StickyCartBar> createState() => _StickyCartBarState();
+}
+
+class _StickyCartBarState extends ConsumerState<_StickyCartBar> {
+  bool _reminderLoading = false;
+
+  Future<void> _toggleReminder() async {
+    setState(() => _reminderLoading = true);
+    final ok = await ref.read(remindersProvider.notifier).toggle(widget.product.id);
+    if (mounted) {
+      setState(() => _reminderLoading = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please sign in to set a reminder'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
+    final isReminded = ref.watch(remindersProvider).contains(widget.product.id);
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -793,95 +845,148 @@ class _StickyCartBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Express delivery info
-          if (product.isExpressAvailable)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+      child: widget.product.isInStock
+          ? Row(
+              children: [
+                // Express delivery info
+                if (widget.product.isExpressAvailable)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.bolt, size: 13, color: AppColors.gold),
+                          const SizedBox(width: 3),
+                          Text('Get it in 2 Hours',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                fontSize: 11,
+                                color: AppColors.forestGreen,
+                                fontWeight: FontWeight.w700,
+                              )),
+                        ]),
+                        Text('Express delivery available',
+                            style: AppTextStyles.bodySmall.copyWith(
+                                fontSize: 9, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  )
+                else
+                  const Expanded(child: SizedBox()),
+                const SizedBox(width: AppConstants.paddingM),
+                GestureDetector(
+                  onTap: widget.loading ? null : widget.onAddToCart,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.paddingL,
+                        vertical: AppConstants.paddingM),
+                    decoration: BoxDecoration(
+                      color: widget.loading
+                          ? AppColors.forestGreen.withValues(alpha: 0.6)
+                          : AppColors.forestGreen,
+                      borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                    ),
+                    child: widget.loading
+                        ? const SizedBox(
+                            width: 80,
+                            child: Center(
+                              child: SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(
+                                    color: AppColors.white, strokeWidth: 2),
+                              ),
+                            ))
+                        : Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.shopping_bag_outlined,
+                                size: 16, color: AppColors.white),
+                            const SizedBox(width: 8),
+                            Text('ADD TO CART',
+                                style: AppTextStyles.categoryChip.copyWith(
+                                    color: AppColors.white,
+                                    fontSize: 11,
+                                    letterSpacing: 1.5)),
+                          ]),
+                  ),
+                ),
+              ],
+            )
+          // ── Out of stock — Notify Me row ────────────────────────────────
+          : Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.bolt, size: 13, color: AppColors.gold),
-                      const SizedBox(width: 3),
+                      Text('Currently unavailable',
+                          style: AppTextStyles.labelSmall.copyWith(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600)),
                       Text(
-                        'Get it in 2 Hours',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          fontSize: 11,
-                          color: AppColors.forestGreen,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        isReminded
+                            ? "We'll notify you when it's back"
+                            : 'Get notified when back in stock',
+                        style: AppTextStyles.bodySmall.copyWith(
+                            fontSize: 9, color: AppColors.textMuted),
                       ),
                     ],
                   ),
-                  Text(
-                    'Express delivery available',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 9,
-                      color: AppColors.textMuted,
+                ),
+                const SizedBox(width: AppConstants.paddingM),
+                GestureDetector(
+                  onTap: _reminderLoading ? null : _toggleReminder,
+                  child: AnimatedContainer(
+                    duration: AppConstants.animFast,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.paddingL,
+                        vertical: AppConstants.paddingM),
+                    decoration: BoxDecoration(
+                      color: isReminded
+                          ? AppColors.forestGreen.withValues(alpha: 0.1)
+                          : AppColors.forestGreen,
+                      borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                      border: isReminded
+                          ? Border.all(
+                              color: AppColors.forestGreen, width: 1.2)
+                          : null,
                     ),
+                    child: _reminderLoading
+                        ? const SizedBox(
+                            width: 80,
+                            child: Center(
+                              child: SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(
+                                    color: AppColors.forestGreen,
+                                    strokeWidth: 2),
+                              ),
+                            ))
+                        : Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(
+                              isReminded
+                                  ? Icons.notifications_active_rounded
+                                  : Icons.notifications_outlined,
+                              size: 16,
+                              color: isReminded
+                                  ? AppColors.forestGreen
+                                  : AppColors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isReminded ? 'REMINDED' : 'NOTIFY ME',
+                              style: AppTextStyles.categoryChip.copyWith(
+                                  color: isReminded
+                                      ? AppColors.forestGreen
+                                      : AppColors.white,
+                                  fontSize: 11,
+                                  letterSpacing: 1.5),
+                            ),
+                          ]),
                   ),
-                ],
-              ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-
-          const SizedBox(width: AppConstants.paddingM),
-
-          // Add to Cart button
-          GestureDetector(
-            onTap: (product.isInStock && !loading) ? onAddToCart : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.paddingL,
-                vertical: AppConstants.paddingM,
-              ),
-              decoration: BoxDecoration(
-                color: (product.isInStock && !loading)
-                    ? AppColors.forestGreen
-                    : AppColors.textMuted,
-                borderRadius: BorderRadius.circular(AppConstants.radiusS),
-              ),
-              child: loading
-                  ? const SizedBox(
-                      width: 80,
-                      child: Center(
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            color: AppColors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.shopping_bag_outlined,
-                          size: 16,
-                          color: AppColors.white,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          product.isInStock ? 'ADD TO CART' : 'OUT OF STOCK',
-                          style: AppTextStyles.categoryChip.copyWith(
-                            color: AppColors.white,
-                            fontSize: 11,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

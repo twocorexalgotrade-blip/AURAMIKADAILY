@@ -88,37 +88,25 @@ class _PdpImageGalleryState extends State<PdpImageGallery> {
             ),
           ),
 
-          // ── Top overlay: back + actions ─────────────────────────────────
+          // ── Top overlay: actions (back handled by persistent button in screen)
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
-            left: AppConstants.paddingS,
             right: AppConstants.paddingS,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back
                 _GlassIconButton(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  onTap: widget.onBack,
+                  icon: Icons.share_outlined,
+                  onTap: widget.onShareTap,
                 ),
-                // Share + Wishlist
-                Row(
-                  children: [
-                    _GlassIconButton(
-                      icon: Icons.share_outlined,
-                      onTap: widget.onShareTap,
-                    ),
-                    const SizedBox(width: 8),
-                    _GlassIconButton(
-                      icon: widget.isWishlisted
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      iconColor: widget.isWishlisted
-                          ? AppColors.terraCotta
-                          : AppColors.textPrimary,
-                      onTap: widget.onWishlistTap,
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                _GlassIconButton(
+                  icon: widget.isWishlisted
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  iconColor: widget.isWishlisted
+                      ? AppColors.terraCotta
+                      : AppColors.textPrimary,
+                  onTap: widget.onWishlistTap,
                 ),
               ],
             ),
